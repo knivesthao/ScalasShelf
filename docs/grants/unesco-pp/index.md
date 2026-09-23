@@ -17,7 +17,7 @@
 | **Max requests per Member State** | 7 (numbered by priority) |
 | **Who can apply** | Member States via their National Commission for UNESCO |
 | **NGO route** | NGOs in official partnership with UNESCO may also apply (2 requests, need support from ≥2 Member States) |
-| **LMM Fit** | ✅ Strong — education, literacy, culture, ICT in education |
+| **Textweaver Fit** | ✅ Strong — education, literacy, culture, ICT in education |
 | **Key blocker** | Cannot apply directly as a company. Must work through Laos' National Commission for UNESCO (or US, but Laos is the target country) |
 
 ### Amounts
@@ -27,7 +27,7 @@
 | National | $26,000 |
 | Subregional / Interregional | $28,000 |
 | Regional | $38,000 |
-| Emergency Assistance | $50,000 (not applicable to LMM) |
+| Emergency Assistance | $50,000 (not applicable to Textweaver) |
 
 ### Eligible expenses (relevant excerpt)
 - Publications, documentation, translation, reproduction
@@ -37,11 +37,11 @@
 
 ---
 
-## LMM Alignment
+## Textweaver Alignment
 
 | Criterion | Assessment |
 |-----------|-----------|
-| UNESCO mandate areas | ✅ Education + Culture — core to LMM |
+| UNESCO mandate areas | ✅ Education + Culture — core to Textweaver |
 | Target country (Laos) | ✅ Least developed country — UNESCO priority |
 | Gender equality | Need to ensure at least 1 of 7 requests addresses GE (design a GE angle for the proposal) |
 | Africa / LDCs / SIDS priority | ✅ Laos qualifies |
@@ -55,11 +55,11 @@
 The only viable route is through **Laos' National Commission for UNESCO**:
 
 1. **Identify contact:** Find the Lao National Commission for UNESCO (likely under Ministry of Education and Sports)
-2. **Build relationship:** Present LMM as a priority project aligned with Lao education goals
-3. **Get prioritized:** The National Commission submits up to 7 requests — LMM needs to be in that list
+2. **Build relationship:** Present Textweaver as a priority project aligned with Lao education goals
+3. **Get prioritized:** The National Commission submits up to 7 requests — Textweaver needs to be in that list
 4. **Wait for next cycle:** Next submission window targets ~early 2028 for the 2028–2029 biennium
 
-> **Alternative (less likely):** If LMM's Lao partner company has NGO status or a relationship with an NGO in official UNESCO partnership, that NGO could submit via the NGO route (needs 2 Member States' support).
+> **Alternative (less likely):** If Textweaver's Lao partner company has NGO status or a relationship with an NGO in official UNESCO partnership, that NGO could submit via the NGO route (needs 2 Member States' support).
 
 ---
 
@@ -87,7 +87,7 @@ UNESCO publishes a Circular Letter (CL) when the call opens — watch for CL/4xx
 
 - [ ] Identify the Lao National Commission for UNESCO contact point
 - [ ] Build relationship with relevant MoES department
-- [ ] Prepare a 1-page concept note for LMM tailored to UNESCO participation programme criteria
+- [ ] Prepare a 1-page concept note for Textweaver tailored to UNESCO participation programme criteria
 - [ ] Monitor UNESCO Circular Letters for the 2028–2029 call
 - [ ] Reassess priority when call opens (~2028)
 

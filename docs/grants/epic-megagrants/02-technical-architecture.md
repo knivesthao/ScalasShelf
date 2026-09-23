@@ -1,6 +1,6 @@
 # 3. Technical Architecture
 
-LMM is a pipeline of four orchestrated stages, each leveraging a specific UE capability that no alternative engine or WebGL approach could replicate.
+Textweaver is a pipeline of four orchestrated stages, each leveraging a specific UE capability that no alternative engine or WebGL approach could replicate.
 
 ## Architecture Overview
 
@@ -18,9 +18,9 @@ LMM is a pipeline of four orchestrated stages, each leveraging a specific UE cap
 │  STAGE 2: AI Content Generation Layer                       │
 │  ┌─────────────┐     ┌──────────────┐    ┌───────────────┐ │
 │  │ LLM Pipeline │────▶│ Scene Struct  │───▶│ Image Gen API │ │
-│  │ (GPT-4o/     │     │ Parser        │    │ (DALL-E /     │ │
-│  │  Claude)     │     │ JSON → UE     │    │  Stable       │ │
-│  │              │     │ Data Assets   │    │  Diffusion)   │ │
+│  │ (Llama 3,    │     │ Parser        │    │ (SDXL,        │ │
+│  │  self-host)  │     │ JSON → UE     │    │  self-host)   │ │
+│  │              │     │ Data Assets   │    │               │ │
 │  └─────────────┘     └──────┬───────┘    └───────┬───────┘ │
 │                             │                     │          │
 │    Example output:          ▼                     ▼          │
@@ -58,7 +58,7 @@ LMM is a pipeline of four orchestrated stages, each leveraging a specific UE cap
 
 ## Stage 1: Creator Interface — Pixel Streaming
 
-A Lao creator logs into the LMM web app through a standard browser — no UE installation, no GPU requirement. The editor UI is a React single-page application that receives a Pixel Streaming video feed from a headless UE5 instance running on a cloud GPU (AWS G5 or similar).
+A Lao creator logs into the Textweaver web app through a standard browser — no UE installation, no GPU requirement. The editor UI is a React single-page application that receives a Pixel Streaming video feed from a headless UE5 instance running on a cloud GPU (RunPod A5000, 24GB VRAM).
 
 **Why Pixel Streaming instead of a custom web renderer:**
 - The creator needs real-time preview of 3D scenes as they are assembled — exactly what Pixel Streaming was built for
@@ -79,7 +79,7 @@ This is where the "magic" happens — and where careful engineering separates a 
 The creator provides narration in plain text, scene by scene. Each scene description can be as short as "A market in Luang Prabang at sunset, a boy buys sticky rice from a vendor" or as long as a paragraph. The text is always in Lao or English — we build for Lao creators first.
 
 **Step 2a — LLM Pipeline:**
-The narration passes through a fine-tuned LLM (GPT-4o or Claude, with fallback to self-hosted Llama for cost-sensitive production) with a structured prompt that outputs JSON:
+The narration passes through a self-hosted LLM (Llama 3 via Ollama — sharing the same GPU as rendering, so inference costs near zero) with a structured prompt that outputs JSON:
 
 ```json
 {
@@ -102,7 +102,7 @@ The narration passes through a fine-tuned LLM (GPT-4o or Claude, with fallback t
 The LLM is constrained to output only structural scene data — never the images themselves. This separation keeps the LLM call cheap and deterministic.
 
 **Step 2b — Image Generation:**
-Background elements, character sprites, and prop assets are generated via Stable Diffusion (self-hosted on the same cloud infrastructure, or API-brokered through DALL-E for higher quality when budget allows). Crucially, we maintain character consistency across scenes by:
+Background elements, character sprites, and prop assets are generated via Stable Diffusion XL (self-hosted via ComfyUI on the same GPU, eliminating external API costs). Crucially, we maintain character consistency across scenes by:
 - Generating a **reference character sheet** once per character — the creator approves it
 - Using **IP-Adapter + ControlNet** to constrain subsequent generations to match the established character design, pose, and style
 - Storing generated assets in a UE-compatible format (PNG textures, EXR for HDR environment lighting)
@@ -113,7 +113,7 @@ The LLM scene struct serves as the prompt engineering bridge — turning freefor
 
 ## Stage 3: UE Scene Assembly Engine
 
-This is the core of LMM and the part that no other approach can replicate.
+This is the core of Textweaver and the part that no other approach can replicate.
 
 A headless UE5 process receives the structured scene data (JSON from Stage 2) and executes a fully automated assembly pipeline through Blueprints:
 
@@ -147,7 +147,7 @@ The output of Stage 3 is a folder of PNG sequences (one per scene strip for comi
 - A lightweight REST API serves content metadata, user library state, and download URLs
 - User authentication via Lao phone number (no email requirement — critical for our audience)
 - QR code payment integration bridges the Lao mobile money ecosystem (BCEL One, LDB Mobile Banking)
-- Content is served from a CDN with edge nodes in Southeast Asia (CloudFront or similar with Singapore/Bangkok edge locations)
+- Content is served from Cloudflare's CDN with edge nodes in Southeast Asia (Vientiane, Bangkok, Singapore) — zero egress fees
 
 **Offline Mobile Client:**
 - A Progressive Web App (PWA) wrapper provides the reading experience with full Service Worker offline caching
@@ -163,11 +163,11 @@ The output of Stage 3 is a folder of PNG sequences (one per scene strip for comi
 |-------|-----------|---------------|
 | Creator UI | React + WebRTC | Pixel Streaming client, accessible from any browser |
 | UE Runtime | Unreal Engine 5.4+ (headless) | Scene assembly, rendering, Pixel Streaming host |
-| AI — Text | GPT-4o / Claude API (prod), Llama 3 (self-hosted fallback) | Structured scene extraction from Lao/English narration |
-| AI — Image | Stable Diffusion XL + IP-Adapter + ControlNet | Consistent character generation across scenes |
+| AI — Text | Llama 3 (self-hosted via Ollama) | Structured scene extraction from Lao/English narration |
+| AI — Image | Stable Diffusion XL + IP-Adapter + ControlNet (self-hosted via ComfyUI) | Consistent character generation across scenes |
 | AI — Voice | ElevenLabs / Coqui TTS | Narration audio in Lao (fine-tuned) and English |
-| Cloud GPU | AWS G5 (A10G) or equivalent | Pixel Streaming host + batch rendering |
+| Cloud GPU | RunPod A5000 (24GB VRAM) | Pixel Streaming host + batch rendering |
 | Rendering | UE Movie Render Queue | Offline-quality output with comic post-process shader |
 | Packaging | Custom Node.js pipeline + FFmpeg | Chunk content, optimize images, transcode video |
-| CDN | AWS CloudFront / Cloudflare | Edge delivery in Southeast Asia |
+| CDN | Cloudflare R2 + CDN | Edge delivery in Southeast Asia, zero egress fees |
 | Mobile Client | PWA (Service Worker + IndexedDB) initially; UE mobile build for native | Offline reading, low-end device support |

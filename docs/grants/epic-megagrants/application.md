@@ -21,14 +21,14 @@ No project media exists yet — we are applying at the concept stage. This grant
 ## Project build link
 > github?
 
-No public build yet. The repository will be created as the first deliverable in Month 1 of the grant period. We will host at github.com/admais/lmm.
+No public build yet. The repository will be created as the first deliverable in Month 1 of the grant period. We will host at github.com/admais/textweaver.
 
 ---
 
 ## Project website
 > subpage of admais.xyz
 
-https://admais.xyz/lmm *(to be created — currently redirects to ADMAIS homepage)*
+https://admais.xyz/textweaver *(to be created — currently redirects to ADMAIS homepage)*
 
 ---
 
@@ -42,7 +42,7 @@ https://admais.xyz/lmm *(to be created — currently redirects to ADMAIS homepag
 
 **Unreal Engine 5** — not Unreal Editor for Fortnite (UEFN).
 
-UEFN is a specialized version of UE for building and publishing content exclusively within the Fortnite ecosystem. LMM is building a standalone web and mobile platform — a creator tool that generates downloadable comics and interactive books distributed through our own digital library, not through Fortnite. UEFN does not support Pixel Streaming for web-based creator tools, does not allow headless rendering, and does not export content outside the Fortnite platform. We need the full Unreal Engine 5 for its Blueprint scripting, Movie Render Queue, Sequencer for animation, and mobile packaging pipeline.
+UEFN is a specialized version of UE for building and publishing content exclusively within the Fortnite ecosystem. Textweaver is building a standalone web and mobile platform — a creator tool that generates downloadable comics and interactive books distributed through our own digital library, not through Fortnite. UEFN does not support Pixel Streaming for web-based creator tools, does not allow headless rendering, and does not export content outside the Fortnite platform. We need the full Unreal Engine 5 for its Blueprint scripting, Movie Render Queue, Sequencer for animation, and mobile packaging pipeline.
 
 ---
 
@@ -74,11 +74,11 @@ This pattern repeats across the region. Thailand's rural provinces face similar 
 
 ### The Solution
 
-We are building LMM (Laos Media Machine): a web-based content creation platform where Unreal Engine 5 serves as a literacy engine. A creator writes a story scene by scene in Lao, English, or Thai. AI reads the narration and extracts what each scene needs — characters, settings, lighting, camera angles — as structured data. AI image generation produces consistent character sprites and backgrounds. Unreal Engine assembles everything into fully rendered 3D scenes with dynamic lighting and cinematic presentation. The output is a lightweight, downloadable comic or interactive children's book that a student can read on a $50 Android phone, offline, in pieces small enough to download over a 2G connection.
+We are building Textweaver (Textweaver): a web-based content creation platform where Unreal Engine 5 serves as a literacy engine. A creator writes a story scene by scene in Lao, English, or Thai. AI reads the narration and extracts what each scene needs — characters, settings, lighting, camera angles — as structured data. AI image generation produces consistent character sprites and backgrounds. Unreal Engine assembles everything into fully rendered 3D scenes with dynamic lighting and cinematic presentation. The output is a lightweight, downloadable comic or interactive children's book that a student can read on a $50 Android phone, offline, in pieces small enough to download over a 2G connection.
 
 The visual style of UE-rendered content gives us a powerful advantage: tens of millions of people across Southeast Asia already play games built with Unreal Engine. They know and trust this visual language. A child who has spent hours in UE-rendered worlds immediately recognizes and engages with educational content rendered through the same pipeline. We are meeting learners where their visual expectations already are.
 
-LMM has four stages:
+Textweaver has four stages:
 
 **Stage 1 — Creator Interface:** A web editor where creators write narratives. AI reads the story text (Lao, English, Thai) and automatically generates scene descriptions — what's happening, who's there, what the mood and lighting should be.
 
@@ -90,7 +90,11 @@ LMM has four stages:
 
 ### Why This Matters for Epic
 
-This project stretches Unreal Engine into territory it has never occupied: serving underserved readers through AI-assisted, real-time 3D content creation. It proves UE's versatility, opens a new adoption category (educational content creation for developing economies), showcases UE + AI integration as a product rather than a demo, and creates a replicable model across Southeast Asia. This is the bold, lateral use of UE that MegaGrants was created to champion.
+This project stretches Unreal Engine into territory it has never occupied: serving underserved readers through AI-assisted, real-time 3D content creation. It proves UE's versatility, opens a new adoption category (educational content creation for developing economies), showcases UE + AI integration as a product rather than a demo, and creates a replicable model across Southeast Asia. There is no direct competitor at this intersection — adjacent players either distribute static content, generate flat 2D images, or publish physical books — making Textweaver a first-mover in an unclaimed niche. This is the bold, lateral use of UE that MegaGrants was created to champion.
+
+### The Next Step
+
+The next step is to prove the core loop end-to-end. We will provision a RunPod A5000 GPU (24GB VRAM), install Unreal Engine 5 in headless mode, and deploy the self-hosted AI stack (Llama 3 for narration parsing, Stable Diffusion XL for image generation). Then we build the Blueprint orchestrator — the master script that reads structured scene data, spawns AI-generated assets, configures lighting and cameras, applies the comic post-process shader, and renders via Movie Render Queue. The first milestone is a single working proof: a creator writes a four-panel story, and the pipeline produces a UE-rendered comic strip. That prototype is the foundation for everything that follows.
 
 ---
 
@@ -104,7 +108,9 @@ This project stretches Unreal Engine into territory it has never occupied: servi
 
 4. **Offline-first mobile distribution.** Content packaged in per-scene chunks under 500KB — users download scene by scene over unstable connections. Works on a $50 Android phone with no internet after download.
 
-5. **A creator economy, not a content library.** Creators write, AI generates visuals, UE renders, the library delivers. Creators earn 70% of sales. The library grows organically as creators publish.
+5. **Free for readers, sustainable through creators and institutions.** The library is free for end users — we never charge a child to read. Sustainability comes from creator subscriptions and institutional/donor-funded access. The library grows organically as creators publish.
+
+6. **No direct competitor — an unoccupied niche.** Global digital education platforms (Khan Academy, Kolibri, Rumie, Worldreader) distribute static, pre-existing content; AI storytelling tools (Storybird, Comicai, AI Comic Factory) are English-only, flat 2D, and online-only; and Lao print publishers (Big Brother Mouse, Room to Read) lack any digital distribution network. No one combines an automated Unreal Engine 3D pipeline, offline-first lightweight downloads, a Lao-language interface, and local mobile money integration — the exact combination Textweaver delivers.
 
 ---
 
@@ -112,7 +118,7 @@ This project stretches Unreal Engine into territory it has never occupied: servi
 
 **$25,000–$50,000**
 
-We are requesting approximately $33,000 for a focused 3-month development sprint followed by 9 months of platform hosting and operations — 12 months total. The development phase is compressed to deliver the core UE5 + AI pipeline rapidly, while the Operations Manager continues for the full year to run the platform, recruit creators, and manage content delivery.
+We are requesting exactly $41,671 for a focused 3-month development sprint followed by 9 months of platform operations — 12 months total. The development phase is compressed to deliver the core UE5 + AI pipeline rapidly, while the Operations Manager continues for the full year to run the platform, recruit creators, and manage content delivery.
 
 All development runs on a RunPod A5000 GPU ($0.19/hr spot for dev, $0.29/hr on-demand for occasional creator rendering) — we have no local machine capable of UE5. AI inference (Llama 3 for scene parsing + Stable Diffusion for image generation) runs on the same GPU during idle time, eliminating external API costs.
 
@@ -124,10 +130,10 @@ All development runs on a RunPod A5000 GPU ($0.19/hr spot for dev, $0.29/hr on-d
 | Equipment | $3,000 | Development and testing devices, content creation tools (one-time) |
 | RunPod GPU (3 mo development, spot) | $57 | RunPod A5000 (24GB VRAM) at $0.19/hr spot pricing, ~100 hours/month × 3 months. Self-hosted Llama 3 + Stable Diffusion run on the same GPU during idle time. |
 | RunPod GPU (9 mo hosting, on-demand) | $26 | Light usage during hosting phase — ~10 hours/month × 9 months at $0.29/hr. Only runs when creators generate new content. |
-| Web Hosting + CDN + Domain | $800 | Cloudflare Pages (free), Workers (free tier), R2 storage (~$50), Supabase free tier, domain (~$10). Full year. |
-| Advertising & Events | $5,000 | Social media ads targeting Lao parents/teachers (Facebook, Instagram), community events to onboard creators and users, printed materials for rural school outreach. |
-| Estimated Taxes (reserve) | $3,200 | Grant recipient is ADMAIS Laos. Corporate tax ~20%. Most expenses are deductible — conservative reserve on projected net profit. |
-| **Total** | **~$33,483** | |
+| Web Hosting + CDN + Domain | $800 | Cloudflare Pages (free), Workers (free tier), R2 storage (~$50), Supabase free tier, domain (~$10). Full year. Funded by the grant, administered by ADMAIS US. |
+| Advertising, Events & Distribution | $10,000 | Social media ads targeting Lao parents/teachers (Facebook, Instagram), community events to onboard creators and users, printed materials for rural school outreach, plus distribution — educator-network coordination, rural device provisioning, and connectivity support. |
+| Contingency (10%) | $3,788 | Standard buffer for unforeseen technical or operational costs. 10% of direct costs ($37,883). |
+| **Total** | **$41,671** | Direct costs ($37,883) + 10% contingency ($3,788) |
 
 **Note on items not shown:**
 - PWA mobile client development → part of AI Developer's scope (in salary)
@@ -138,25 +144,44 @@ All development runs on a RunPod A5000 GPU ($0.19/hr spot for dev, $0.29/hr on-d
 
 | Award | Scope |
 |-------|-------|
-| $25,000–$35,000 | Core UE + AI pipeline functional, Lao-only, reduced content library, shorter manager contract |
+| $25,000–$40,000 | Core UE + AI pipeline functional, Lao-only, reduced content library, reduced advertising/distribution, shorter manager contract |
 | $10,000–$25,000 | Minimum viable pipeline: UE renders AI-generated comic strips from text, sample content only |
 
 ---
 
 ## *How do you plan to use the funds for the project?
 
-The $43,000 funds a 3-month intensive development sprint (September–November 2026) followed by 9 months of platform hosting and operations (December 2026–August 2027), totaling 12 months:
+The $41,671 funds a 12-month plan: a 3-month development sprint (September–November 2026) followed by 9 months of platform operations (December 2026–August 2027). At a high level, the funds are allocated as:
 
-**Phase 1 — Core Pipeline (Month 1):** Provision RunPod A5000 GPU. Set up UE5 development environment. Deploy self-hosted Llama 3 (scene parsing via Ollama) and Stable Diffusion (image generation via ComfyUI) on the same GPU. Build the Blueprint orchestrator that reads structured scene data, spawns AI-generated assets, configures lighting and cameras, applies the custom comic post-process shader, and renders via Movie Render Queue. Achieve the first end-to-end pipeline test: text narration in Lao → UE-rendered comic strip.
+**Personnel — $24,000**
+- **Hiring an AI/UE Developer** for 3 months ($6,000) — Unreal Engine 5 Blueprint scripting, the AI pipeline, and the creator web app.
+- **Hiring an Operations Manager** for 12 months ($12,000) — creator recruitment, school partnerships, marketing, and payment operations.
+- **QA, content writers, and commissioned Lao artists** for 3 months ($6,000) — testing the pipeline and producing the launch library.
 
-**Phase 2 — Creator Tool + Content (Month 2):** Build the web-based creator interface (React SPA on Cloudflare Pages). Design the create-and-publish flow. Build the Workers API gateway that connects creator actions to the RunPod rendering pipeline. Onboard 5 Lao creators for alpha testing. QA/Content Writers begin part-time — testing pipeline output quality and writing our first original stories.
+**Equipment — $3,000**
+- Development and testing devices, including low-end Android phones for field testing.
 
-**Phase 3 — Launch + Library (Month 3):** Produce initial library of 30+ comics and 10+ interactive books in Lao and English. Build the digital library frontend (content catalog, phone auth purchase flow, chunked download reader, PWA offline support). Conduct user testing with Lao students. Launch platform with 100 beta users. Publish open-source Blueprint plugin to GitHub under MIT license.
+**Infrastructure — $883**
+- RunPod A5000 cloud GPU ($83) — spot pricing for development, on-demand for rendering.
+- Web hosting, CDN, and domain ($800) — Cloudflare and Supabase, administered by ADMAIS US.
 
-**Phase 4 — Operations & Growth (Months 4–12):** Operations Manager continues full-time: recruiting creators, managing school partnerships, handling customer support, processing QR/WhatsApp payments. Advertising budget funds social media campaigns targeting Lao parents and teachers (Facebook, Instagram), community events to onboard creators and users, and printed materials for rural school outreach.
+**Operations — $10,000**
+- Advertising, community events, and distribution ($10,000) — social ads, events, printed materials, and educator-network distribution into schools.
+
+**Contingency — $3,788**
+- A 10% buffer for unforeseen technical or operational costs.
+
+**How the work unfolds:**
+
+- **Month 1** — Set up the cloud GPU and UE5 environment, deploy the self-hosted AI models, and build the automated Blueprint pipeline that turns a text prompt into a rendered comic strip.
+- **Month 2** — Build the web-based creator tool and onboard 5 Lao creators for alpha testing.
+- **Month 3** — Produce the initial library (30+ comics, 10+ interactive books) and launch with 100 beta users.
+- **Months 4–12** — Operate and grow: recruit creators, expand school partnerships, run advertising, and process payments.
+
+**Covered within the salaries above:** PWA/mobile development (part of the AI/UE Developer's scope), device testing, and creator training/workshops (part of the Operations Manager's role).
 
 ---
 
 ## Have you secured additional funding for this project?
 
-**No.** This MegaGrant will be the sole funding source for the prototype build. The grant recipient will be ADMAIS (Laos) — the entity operating the project on the ground. ADMAIS Laos is an early-stage company with no existing revenue to absorb project costs. Every dollar of the budget — from developer salary to web hosting to LLM API calls — needs to come from this grant. ADMAIS US provides technical oversight and AI/UE development support as a partner. Post-launch, the platform will generate revenue through creator subscriptions and content sales, reaching break-even within 18 months of launch.
+**No.** This MegaGrant will be the sole funding source for the prototype build. The grant recipient will be **ADMAIS (US)** — the entity applying for and administering the award, including hosting, which is funded by the grant. **ADMAIS (Laos)** performs most of the development work, operating on the ground alongside a network of Lao educators (non-profits, English learning centers, teachers, and education administrators) who drive distribution and classroom adoption. Post-launch, consumer access remains free, with sustainability coming from creator subscriptions and institutional/donor-funded access.

@@ -7,18 +7,18 @@
 
 ## Key RFP Takeaways for Stage 1 (up to $200K)
 
-| Requirement | What it means for LMM |
+| Requirement | What it means for Textweaver |
 |-------------|-----------------------|
 | **Post-prototype, real-world pilot** | Need a working prototype ready to test with real users in Laos — not just an idea |
 | **Test with hundreds or thousands of people** | Pilot should target meaningful scale. 500–1,000 users? |
 | **Strong theory of change** | Clear causal chain: activities → outputs → outcomes → impact |
 | **No causal evidence required** | But must have a plan to generate it during/after Stage 1 |
-| **Public pathway (gov/donor funded)** | LMM fits here — will need government or donor support for scale |
+| **Public pathway (gov/donor funded)** | Textweaver fits here — will need government or donor support for scale |
 | **Cost-effectiveness case** | Project costs per user at scale; compare to alternatives (printed books, existing digital tools) |
-| **Potential to reach millions** | Need to make the case that LMM could reach +1M users over 10 years |
+| **Potential to reach millions** | Need to make the case that Textweaver could reach +1M users over 10 years |
 | **Co-funding valued, not required** | Nice-to-have, not must-have |
 
-> **Note:** RFP says "post-prototype, ready to be tested in a real-world setting." If LMM doesn't have a working prototype yet, we need to clarify what "ready" means. A web MVP with one comic generator could qualify.
+> **Note:** RFP says "post-prototype, ready to be tested in a real-world setting." If Textweaver doesn't have a working prototype yet, we need to clarify what "ready" means. A web MVP with one comic generator could qualify.
 
 ---
 
@@ -35,7 +35,7 @@
 **Structure:** (i) what, (ii) who it serves, (iii) outcomes, (iv) activities
 
 **Draft:**
-> LMM is an AI-powered platform that generates comics and interactive children's books for English and Lao language learners in Laos. It serves Lao citizens — especially children and youth in remote areas with limited access to reading materials — through a digital media library accessible on mobile. The innovation aims to improve literacy and language test scores by providing locally relevant, offline-capable reading content. With DIV Fund support, we will pilot the platform with 500+ users in Laos, test content generation workflows via our Unreal Engine + AI pipeline, and measure usage, engagement, and early literacy outcomes.
+> Textweaver is an AI-powered platform that generates comics and interactive children's books for English and Lao language learners in Laos. It serves Lao citizens — especially children and youth in remote areas with limited access to reading materials — through a digital media library accessible on mobile. The innovation aims to improve literacy and language test scores by providing locally relevant, offline-capable reading content. With DIV Fund support, we will pilot the platform with 500+ users in Laos, test content generation workflows via our Unreal Engine + AI pipeline, and measure usage, engagement, and early literacy outcomes.
 
 ---
 
@@ -75,7 +75,7 @@ DIV grant → Build platform + create content library
 
 - Key outcomes: (1) reading engagement (mins/week), (2) reading comprehension scores, (3) vocabulary acquisition
 - Assumptions backed by evidence: link between reading frequency and literacy outcomes is well-established (World Bank, UNESCO literature)
-- What LMM changes: removes the access barrier (no books → digital library) and the content barrier (AI generation makes Lao-language content viable)
+- What Textweaver changes: removes the access barrier (no books → digital library) and the content barrier (AI generation makes Lao-language content viable)
 
 ---
 
@@ -118,8 +118,8 @@ DIV grant → Build platform + create content library
 **Compare to alternatives:**
 - Printed books in Laos: $2–5 per book, limited distribution, reaches few children
 - Existing ed-tech: $1–3/month per user for internet-dependent apps
-- LMM at scale: projected ~$0.50–1.00 per user per year (once platform built, marginal costs are low)
-- Per-point improvement in literacy scores: LMM projected to be more cost-effective than textbook distribution or teacher training programs due to digital leverage
+- Textweaver at scale: projected ~$0.50–1.00 per user per year (once platform built, marginal costs are low)
+- Per-point improvement in literacy scores: Textweaver projected to be more cost-effective than textbook distribution or teacher training programs due to digital leverage
 
 ---
 
@@ -171,6 +171,6 @@ Methods: usage analytics, surveys, reading assessments, cost tracking.
 
 1. **Fill team details** (Q12) — names, roles, expertise for ADMAIS US + Laos
 2. **Gather statistics** — Lao literacy rates, mobile penetration, education access data
-3. **Confirm prototype readiness** — does LMM have a working web MVP? If not, can we scope the build within pilot?
+3. **Confirm prototype readiness** — does Textweaver have a working web MVP? If not, can we scope the build within pilot?
 4. **Draft full answers** — use the outlines above, expand each into the allowed character limits (use @pro for narrative crafting)
 5. **Submit via portal** — https://www.div.fund
