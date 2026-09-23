@@ -1,9 +1,9 @@
-# LMM Project — File Map
+# Textweaver Project — File Map
 
 > Read this to find the right file. Each section file is < 150 lines for token efficiency.
 
 ```
-LMM/
+Textweaver/
 ├── DASHBOARD.md                     # 🔴 Read first — all actions sorted by deadline
 ├── idea.md                          # Core project idea (39 lines)
 ├── .agent/
@@ -24,17 +24,15 @@ LMM/
 │   │   │   ├── 08-appendix.md      # Data & sources template
 │   │   │   └── checklist.md        # Pre-submission checklist
 │   │   ├── epic-megagrants/         # ✅ Complete — ready to submit
-│   │   │   ├── index.md             # Landing page (~60 lines)
-│   │   │   ├── 01-problem-narrative.md  # Problem narrative (~40 lines)
-│   │   │   ├── 02-why-unreal.md     # Why UE + Epic (~30 lines)
-│   │   │   ├── 03-technical-architecture.md  # Architecture (~180 lines)
-│   │   │   ├── 04-team.md          # ADMAIS US + Laos (~55 lines)
-│   │   │   ├── 05-competitive-landscape.md   # Competitive analysis (~45 lines)
-│   │   │   ├── 06-budget.md        # Budget + cost-reduction options (~45 lines)
-│   │   │   ├── 07-milestones.md    # Timeline (~50 lines)
-│   │   │   ├── 08-sustainability.md # Post-grant plan (~85 lines)
-│   │   │   ├── 09-appendix.md      # Statistics (~50 lines)
-│   │   │   └── application.md      # Epic portal application form
+│   │   │   ├── index.md             # Landing page + submission checklist
+│   │   │   ├── application.md       # Epic portal application form
+│   │   │   ├── 01-problem-and-why-unreal.md  # Problem + why UE
+│   │   │   ├── 02-technical-architecture.md  # Architecture (~180 lines)
+│   │   │   ├── 03-team.md           # ADMAIS US + Laos + educators
+│   │   │   ├── 04-competitive-landscape.md   # Competitive analysis
+│   │   │   ├── 05-budget-and-milestones.md   # Budget + timeline
+│   │   │   ├── 06-sustainability.md # Post-grant plan
+│   │   │   └── 07-appendix.md       # Statistics & sources
 │   │   ├── isif-asia/               # 🟡 Preparing for 2027
 │   │   │   ├── index.md             # Landing page + section links
 │   │   │   ├── 01-alignment.md     # ISIF alignment

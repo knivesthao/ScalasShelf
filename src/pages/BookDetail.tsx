@@ -105,7 +105,7 @@ export function BookDetail() {
       </button>
 
       <div className="book-hero">
-        <img src={book.cover_image_url || '/mock/cover-placeholder.png'} alt={book.title} />
+        <img src={book.cover_image_url || '/mock/cover-placeholder.svg'} alt={book.title} />
         <div className="book-info">
           <h1>{book.title}</h1>
           <p className="creator">by {book.creator_name}</p>

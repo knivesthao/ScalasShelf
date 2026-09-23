@@ -9,7 +9,7 @@ const mockContent = [
     creator_name: 'Somsack',
     language: 'lao',
     reading_level: 'beginner',
-    cover_image_url: '/mock/cover-placeholder.png',
+    cover_image_url: '/mock/cover-placeholder.svg',
     price_kip: 5000,
     description: 'A story about a brave buffalo.',
   },
@@ -19,7 +19,7 @@ const mockContent = [
     creator_name: 'Noy',
     language: 'english',
     reading_level: 'intermediate',
-    cover_image_url: '/mock/cover-placeholder.png',
+    cover_image_url: '/mock/cover-placeholder.svg',
     price_kip: 8000,
     description: 'A day at the Luang Prabang market.',
   },
@@ -70,7 +70,7 @@ describe('Library', () => {
   it('renders the library header', async () => {
     renderLibrary();
     await waitFor(() => {
-      expect(screen.getByText('LMM Library')).toBeDefined();
+      expect(screen.getByText('Textweaver')).toBeDefined();
     });
   });
 

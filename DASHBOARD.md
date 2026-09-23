@@ -1,4 +1,4 @@
-# LMM Grant Dashboard
+# Textweaver Grant Dashboard
 
 > **One file to rule them all.** Read this first every session. Sorted by deadline — soonest at top.
 > Updated: 2026-07-12
@@ -52,7 +52,7 @@ Parallel: PCF inquiry, ISIF 2027 prep → ready when windows open
 
 ## Action Detail (per grant)
 
-### Epic MegaGrants → [`grants/epic-megagrants/actions.md`](docs/grants/epic-megagrants/actions.md)
+### Epic MegaGrants → [`grants/epic-megagrants/index.md`](docs/grants/epic-megagrants/index.md)
 ### PCF → [`grants/pcf/actions.md`](docs/grants/pcf/actions.md)
 ### ISIF Asia → [`grants/isif-asia/actions.md`](docs/grants/isif-asia/actions.md)
 ### DIV Fund → [`grants/usaid-div/index.md`](docs/grants/usaid-div/index.md) *(waiting on prototype)*

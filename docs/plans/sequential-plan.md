@@ -1,4 +1,4 @@
-# LMM Grant Proposal — Sequential Execution Plan
+# Textweaver Grant Proposal — Sequential Execution Plan
 
 > **Strategy:** Use DeepSeek V4 Flash for routine tasks (@flash) and DeepSeek V4 Pro for complex work (@pro). Switch between them at each step marker.
 

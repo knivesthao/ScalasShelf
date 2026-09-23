@@ -6,7 +6,7 @@ const mockBook = {
   id: '1',
   title: 'The Brave Buffalo',
   creator_name: 'Somsack',
-  cover_image_url: '/mock/cover-placeholder.png',
+  cover_image_url: '/mock/cover-placeholder.svg',
   price_kip: 5000,
 };
 

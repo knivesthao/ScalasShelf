@@ -5,8 +5,8 @@ import { MemoryRouter } from 'react-router-dom';
 type MockFn = ReturnType<typeof vi.fn>;
 
 const bookRows = [
-  { id: '1', title: 'The Brave Buffalo', creator_name: 'Somsack', language: 'lao', reading_level: 'beginner', cover_image_url: '/mock/cover-placeholder.png', price_kip: 5000 },
-  { id: '2', title: 'Market Day', creator_name: 'Noy', language: 'english', reading_level: 'intermediate', cover_image_url: '/mock/cover-placeholder.png', price_kip: 8000 },
+  { id: '1', title: 'The Brave Buffalo', creator_name: 'Somsack', language: 'lao', reading_level: 'beginner', cover_image_url: '/mock/cover-placeholder.svg', price_kip: 5000 },
+  { id: '2', title: 'Market Day', creator_name: 'Noy', language: 'english', reading_level: 'intermediate', cover_image_url: '/mock/cover-placeholder.svg', price_kip: 8000 },
 ];
 
 let mockPurchaseData: Record<string, unknown>[] = [{ content_id: '1' }, { content_id: '2' }];

@@ -1,4 +1,4 @@
-# LMM — Backend Architecture (How It All Connects)
+# Textweaver — Backend Architecture (How It All Connects)
 
 > **Short answer:** Yes, we need a real backend. Cloudflare Workers handles the *public gateway* (routing, auth, fast operations). The RunPod GPU runs a *full Python backend* (Flask/FastAPI) that handles all the heavy work. The frontend talks to Workers, not directly to RunPod.
 

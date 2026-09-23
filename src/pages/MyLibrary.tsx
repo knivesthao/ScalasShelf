@@ -143,7 +143,7 @@ export function MyLibrary() {
                 >
                   <div className="card-img-wrapper">
                     <img
-                      src={book.cover_image_url || '/mock/cover-placeholder.png'}
+                      src={book.cover_image_url || '/mock/cover-placeholder.svg'}
                       alt={book.title}
                       loading="lazy"
                     />

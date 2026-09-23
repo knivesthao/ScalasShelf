@@ -1,4 +1,4 @@
--- Database Functions for LMM Business Logic
+-- Database Functions for Textweaver Business Logic
 
 -- Confirm a pending payment: credit user, record purchase, update payment status
 CREATE OR REPLACE FUNCTION confirm_payment(p_payment_id UUID)

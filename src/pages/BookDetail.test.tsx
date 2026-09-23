@@ -8,7 +8,7 @@ const mockBook = {
   creator_name: 'Somsack',
   language: 'lao',
   reading_level: 'beginner',
-  cover_image_url: '/mock/cover-placeholder.png',
+  cover_image_url: '/mock/cover-placeholder.svg',
   price_kip: 5000,
   description: 'A story about a brave buffalo.',
 };

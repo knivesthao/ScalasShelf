@@ -1,3 +1,12 @@
+/* Hide scrollbars for screen recording — preserves scroll functionality */
+*::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 :root {
   --bg: #0f0f23;
   --bg-card: #1a1a2e;

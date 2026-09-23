@@ -1,4 +1,4 @@
-// LMM API Gateway — Cloudflare Worker
+// Textweaver API Gateway — Cloudflare Worker
 //
 // Deploy: wrangler deploy
 // Routes: POST /api/render, GET /api/render/:id

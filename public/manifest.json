@@ -1,6 +1,6 @@
 {
-  "name": "LMM Library",
-  "short_name": "LMM",
+  "name": "Textweaver",
+  "short_name": "Textweaver",
   "description": "Digital media library — comics and interactive books",
   "start_url": "/",
   "display": "standalone",

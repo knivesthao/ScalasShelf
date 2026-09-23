@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Textweaver (Textweaver) — ADMAIS</title>
+<meta name="description" content="Textweaver is an AI-powered platform using Unreal Engine 5 to generate comics and interactive children's books for Lao and English learners." />
+<style>
+  :root {
+    --bg: #0f0f23;
+    --bg-2: #14142e;
+    --card: #1a1a2e;
+    --border: #2a2a4a;
+    --text: #e4e4e4;
+    --muted: #8892b0;
+    --accent: #ff6b6b;
+    --accent-2: #4ecdc4;
+    --gold: #ffb347;
+    --maxw: 1120px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.5rem; }
+
+  /* Nav */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(15,15,35,0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 0; }
+  .nav-logo { font-weight: 800; font-size: 1.05rem; color: var(--text); }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 1.4rem; font-size: 0.9rem; }
+  .nav-links a { color: var(--muted); }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+  @media (max-width: 700px) { .nav-links { display: none; } }
+
+  /* Hero */
+  .hero { padding: 5rem 0 4rem; }
+  .hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: center; }
+  @media (max-width: 800px) { .hero-grid { grid-template-columns: 1fr; } }
+  .eyebrow {
+    display: inline-block; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent-2); font-weight: 700; margin-bottom: 1rem;
+  }
+  .hero h1 { font-size: 3rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero p.lead { margin-top: 1.25rem; font-size: 1.15rem; color: var(--muted); max-width: 34rem; }
+  .hero-cta { margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 0.7rem 1.6rem; border-radius: 8px; font-weight: 600; font-size: 0.95rem;
+    background: var(--accent); color: #fff; border: none; cursor: pointer; text-decoration: none;
+  }
+  .btn:hover { background: #ff8787; text-decoration: none; }
+  .btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn.ghost:hover { border-color: var(--muted); }
+  .stat-row { margin-top: 2.5rem; display: flex; gap: 2.5rem; flex-wrap: wrap; }
+  .stat b { display: block; font-size: 1.6rem; font-weight: 800; color: var(--accent-2); }
+  .stat span { font-size: 0.82rem; color: var(--muted); }
+
+  /* Figure / image placeholder */
+  .figure { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); background: var(--card); }
+  .img-placeholder {
+    position: relative; aspect-ratio: 16/9; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0.5rem; text-align: center;
+    background:
+      radial-gradient(ellipse at 30% 30%, rgba(255,107,107,0.10), transparent 60%),
+      radial-gradient(ellipse at 70% 70%, rgba(78,205,196,0.08), transparent 60%),
+      var(--bg-2);
+    padding: 1rem;
+  }
+  .img-placeholder .icon { font-size: 2.5rem; opacity: 0.5; }
+  .img-placeholder .label { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .img-prompt { width: 100%; border-top: 1px dashed var(--border); background: var(--bg); }
+  .img-prompt summary {
+    cursor: pointer; padding: 0.6rem 1rem; font-size: 0.8rem; color: var(--accent-2);
+    font-weight: 600; user-select: none;
+  }
+  .img-prompt summary:hover { color: var(--text); }
+  .img-prompt p { padding: 0 1rem 1rem; font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+  /* Sections */
+  section { padding: 4.5rem 0; border-top: 1px solid var(--border); }
+  .section-label { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 0.75rem; }
+  h2 { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 1rem; }
+  h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .sub { color: var(--muted); font-size: 1.05rem; max-width: 46rem; margin-bottom: 2rem; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; gap: 1.5rem; } }
+
+  .grid { display: grid; gap: 1.2rem; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 800px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem; }
+  .card .num { color: var(--accent); font-weight: 800; font-size: 0.9rem; }
+  .card p { color: var(--muted); font-size: 0.92rem; margin-top: 0.3rem; }
+
+  .chip { display: inline-block; background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 0.35rem 0.9rem; font-size: 0.82rem; color: var(--muted); margin: 0.25rem; }
+  .chip b { color: var(--text); font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .impact { background: linear-gradient(180deg, rgba(78,205,196,0.06), transparent); }
+
+  footer { border-top: 1px solid var(--border); padding: 3rem 0; color: var(--muted); font-size: 0.85rem; }
+  footer .row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <div class="nav-logo">ADMAIS · <span>Textweaver</span></div>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#solution">Solution</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#features">Features</a>
+      <a href="#team">Team</a>
+      <a href="#impact">Impact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">AI · Unreal Engine 5 · Laos</span>
+      <h1>Lao Media <span class="accent">Maker</span></h1>
+      <p class="lead">
+        An AI-powered platform that turns a written story into fully rendered,
+        downloadable comics and interactive children's books — built for the readers
+        who need them most.
+      </p>
+      <div class="hero-cta">
+        <a class="btn" href="#solution">How it works</a>
+        <a class="btn ghost" href="#team">Meet the team</a>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><b>7.5M</b><span>people in Laos</span></div>
+        <div class="stat"><b>&lt;1</b><span>book per child / year</span></div>
+        <div class="stat"><b>10,000+</b><span>target readers</span></div>
+      </div>
+    </div>
+    <figure class="figure">
+      <div class="img-placeholder">
+        <span class="icon">🖼️</span>
+        <span class="label">Hero image → images/hero.jpg</span>
+      </div>
+      <details class="img-prompt">
+        <summary>Copy this AI image prompt</summary>
+        <p>Warm, cinematic digital illustration of a young Lao child sitting on a wooden porch at dusk, reading a glowing comic book on a smartphone. Beside them a friendly water-buffalo silhouette; behind them golden rice terraces and a distant temple. Unreal Engine 3D-rendered aesthetic with cel-shaded comic outlines and halftone shadows, rich teal (#4ecdc4) and coral (#ff6b6b) accents, warm golden-hour lighting, storybook children's-book style, high detail, wide 16:9 composition.</p>
+      </details>
+    </figure>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap two-col">
+    <div>
+      <div class="section-label">The Problem</div>
+      <h2>Books are a luxury in Laos.</h2>
+      <p class="sub">
+        A landlocked country of 7.5 million faces a literacy crisis driven by access, not ability.
+        Physical books are expensive to import and nearly impossible to distribute across rugged,
+        mountainous terrain. A third of households are cutting education spending, and the average
+        child accesses fewer than one book a year outside textbooks.
+      </p>
+      <p class="sub">
+        Meanwhile, mobile phones reach over 80% of the population. The digital infrastructure exists.
+        <strong>The content does not.</strong> Textweaver closes that gap by turning narration into
+        downloadable stories that work on a $50 phone over a 2G connection.
+      </p>
+    </div>
+    <figure class="figure">
+      <div class="img-placeholder">
+        <span class="icon">🖼️</span>
+        <span class="label">Problem image → images/problem.jpg</span>
+      </div>
+      <details class="img-prompt">
+        <summary>Copy this AI image prompt</summary>
+        <p>Illustrated storybook landscape of rural Laos — misty green mountains, terraced rice paddies, a small village of wooden stilt houses, children walking a dirt path toward a school. Soft cel-shaded style with bold outlines, muted greens and earth tones with a warm sunset glow, conveying distance and the challenge of reaching remote communities, 16:9 cinematic composition.</p>
+      </details>
+    </figure>
+  </div>
+</section>
+
+<section id="solution">
+  <div class="wrap">
+    <div class="section-label">The Solution</div>
+    <h2>A content factory, not just a reader.</h2>
+    <p class="sub">
+      A creator writes a story — scene by scene, in Lao or English. AI reads the narration,
+      Unreal Engine renders the visuals, and the digital library delivers a lightweight comic or
+      interactive book a child can read offline.
+    </p>
+    <div class="grid grid-4">
+      <div class="card"><div class="num">1</div><h3>Write</h3><p>A creator writes narration in plain text, scene by scene.</p></div>
+      <div class="card"><div class="num">2</div><h3>AI understands</h3><p>An LLM extracts characters, settings, lighting, and camera from the text.</p></div>
+      <div class="card"><div class="num">3</div><h3>UE renders</h3><p>Unreal Engine assembles the scene and renders it in a comic-book style.</p></div>
+      <div class="card"><div class="num">4</div><h3>Deliver</h3><p>The book downloads in small chunks that work offline on low-end phones.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="wrap two-col">
+    <figure class="figure">
+      <div class="img-placeholder">
+        <span class="icon">🖼️</span>
+        <span class="label">Pipeline image → images/pipeline.jpg</span>
+      </div>
+      <details class="img-prompt">
+        <summary>Copy this AI image prompt</summary>
+        <p>Clean modern infographic-style illustration of an AI content pipeline. On the left, lines of Lao text narration flow through glowing nodes; in the center, a stylized Unreal Engine logo emits a beam of light transforming the text into a comic book page with a character; on the right, the comic splits into small download chunks flowing to a smartphone. Dark navy background (#0f0f23), glowing coral and teal accents, subtle grid, futuristic yet approachable, high detail, 16:9.</p>
+      </details>
+    </figure>
+    <div>
+      <div class="section-label">How It Works</div>
+      <h2>From narration to 3D story, automatically.</h2>
+      <p class="sub">
+        Textweaver is a pipeline of four orchestrated stages, each powered by a Unreal Engine capability
+        that no WebGL approach could replicate — Blueprint-driven scene assembly, real-time rendering,
+        Movie Render Queue, and Pixel Streaming for the browser-based creator tool.
+      </p>
+      <div class="grid">
+        <div class="card"><h3>Blueprint orchestrator</h3><p>AI-generated assets are composed into 3D environments programmatically.</p></div>
+        <div class="card"><h3>Comic post-process shader</h3><p>Cel shading, edge detection, and halftone give every scene a consistent illustrated look.</p></div>
+        <div class="card"><h3>Character consistency</h3><p>IP-Adapter + ControlNet keeps a character identical from page 1 to page 20.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-label">Why It's Different</div>
+    <h2>Built for a market nobody else serves.</h2>
+    <div class="grid grid-3">
+      <div class="card"><h3>UE-powered 3D rendering</h3><p>Real-time lighting, cinematic camera, and animated characters on mobile output — not flat 2D images.</p></div>
+      <div class="card"><h3>Offline-first distribution</h3><p>Chunked per-scene downloads under 5MB, working on a $50 Android phone over 2G.</p></div>
+      <div class="card"><h3>Lao-first experience</h3><p>Lao language UI, phone-number login, and QR payment integration built for the market.</p></div>
+      <div class="card"><h3>Free for readers</h3><p>Every child can read without paying. Sustainability comes from creators and institutions, never from a child.</p></div>
+      <div class="card"><h3>Open source</h3><p>The UE pipeline automation is published as an MIT-licensed plugin for the 3D community.</p></div>
+      <div class="card"><h3>Replicable model</h3><p>If it works in Laos, it works in Cambodia, Myanmar, Nepal, and across the Global South.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="wrap">
+    <div class="section-label">Technology</div>
+    <h2>The stack</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>Creation engine</h3>
+        <span class="chip"><b>Unreal Engine 5</b> · Blueprint · MRQ · Sequencer</span>
+        <span class="chip"><b>Pixel Streaming</b> · browser editor</span>
+      </div>
+      <div class="card">
+        <h3>AI layer</h3>
+        <span class="chip"><b>Llama 3</b> · narration → scene JSON</span>
+        <span class="chip"><b>Stable Diffusion XL</b> · IP-Adapter · ControlNet</span>
+      </div>
+      <div class="card">
+        <h3>Infrastructure</h3>
+        <span class="chip"><b>RunPod A5000</b> · cloud GPU</span>
+        <span class="chip"><b>Cloudflare</b> · R2 · Workers · Pages</span>
+        <span class="chip"><b>Supabase</b> · database · auth</span>
+      </div>
+      <div class="card">
+        <h3>Delivery</h3>
+        <span class="chip"><b>PWA</b> · offline · Service Worker</span>
+        <span class="chip"><b>QR payments</b> · BCEL One · LDB</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="team">
+  <div class="wrap two-col">
+    <div>
+      <div class="section-label">The Team</div>
+      <h2>Built in Laos, hosted from the US, distributed by educators.</h2>
+      <p class="sub">
+        Textweaver is built by ADMAIS — two coordinated companies spanning both sides of the project —
+        together with a network of Lao educators who carry it into classrooms.
+      </p>
+      <div class="grid">
+        <div class="card"><h3>ADMAIS (US)</h3><p>Grant administration, hosting, and technical oversight.</p></div>
+        <div class="card"><h3>ADMAIS (Laos)</h3><p>Most development work, built in-market by Lao developers.</p></div>
+        <div class="card"><h3>Educator network</h3><p>Non-profits, English centers, teachers, and admins driving distribution.</p></div>
+      </div>
+    </div>
+    <figure class="figure">
+      <div class="img-placeholder">
+        <span class="icon">🖼️</span>
+        <span class="label">Team image → images/team.jpg</span>
+      </div>
+      <details class="img-prompt">
+        <summary>Copy this AI image prompt</summary>
+        <p>Modern flat vector illustration showing a collaboration network — three connected nodes (a US flag icon, a Laos flag icon, and a school/educator icon) linked by glowing lines over a subtle map of Southeast Asia. Clean vector style, dark background with coral and teal accents, conveying partnership across borders, 16:9.</p>
+      </details>
+    </figure>
+  </div>
+</section>
+
+<section id="impact" class="impact">
+  <div class="wrap">
+    <div class="section-label">Impact</div>
+    <h2>Where this goes.</h2>
+    <div class="grid grid-3">
+      <div class="card"><h3>Year 1</h3><p>100+ comics and books created, 10,000+ Lao users reached.</p></div>
+      <div class="card"><h3>Year 2</h3><p>Opens to third-party creators; 500+ users and 200+ titles.</p></div>
+      <div class="card"><h3>Year 3</h3><p>Scaled across Southeast Asia with native mobile apps.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap row">
+    <div>© 2026 ADMAIS · Textweaver (Textweaver)</div>
+    <div>Seeking $41,671 via Epic MegaGrants · 12-month build</div>
+  </div>
+</footer>
+
+</body>
+</html>

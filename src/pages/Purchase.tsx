@@ -135,7 +135,7 @@ export function Purchase() {
       <div className="purchase-card">
         <div className="purchase-header">
           <img
-            src={book.cover_image_url || '/mock/cover-placeholder.png'}
+            src={book.cover_image_url || '/mock/cover-placeholder.svg'}
             alt={book.title}
           />
           <div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lmm-v1';
+const CACHE_NAME = 'textweaver-v1';
 const APP_SHELL = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {

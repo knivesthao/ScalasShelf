@@ -57,7 +57,7 @@ export function Library() {
   return (
     <div className="library">
       <header className="library-header">
-        <h1>LMM Library</h1>
+        <h1>Textweaver</h1>
         <nav>
           <Link to="/my-library">My Library</Link>
           {user && <span className="user-phone">{user.phone}</span>}
@@ -98,7 +98,7 @@ export function Library() {
               role="listitem"
             >
               <img
-                src={item.cover_image_url || '/mock/cover-placeholder.png'}
+                src={item.cover_image_url || '/mock/cover-placeholder.svg'}
                 alt={item.title}
                 loading="lazy"
               />

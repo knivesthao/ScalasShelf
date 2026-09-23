@@ -86,6 +86,42 @@ export function StudioDashboard() {
   );
 }
 
+/** Generate a polished comic-panel SVG preview for the Studio editor */
+function previewHtml(narration: string, sceneNumber: number, isBook: boolean): string {
+  const label = isBook ? 'Scene' : 'Panel';
+  const text = narration || `${label} ${sceneNumber} — awaiting narration…`;
+  // Truncate long text for display
+  const lines = text.length > 120 ? text.slice(0, 117) + '…' : text;
+  const accent = '#ff6b6b';
+  const dark = '#1a1a2e';
+  const muted = '#8892b0';
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;align-items:center;justify-content:center;min-height:100dvh;background:${dark};font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:16px}
+.panel{width:100%;max-width:420px;aspect-ratio:16/10;border:2px solid #2a2a4a;border-radius:12px;overflow:hidden;position:relative;background:linear-gradient(135deg,${dark} 0%,#16213e 100%)}
+.panel-inner{display:flex;flex-direction:column;height:100%;padding:24px}
+.panel-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.panel-badge{background:${accent};color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:1px}
+.panel-divider{flex:1;height:1px;background:#2a2a4a}
+.panel-art{flex:1;background:linear-gradient(135deg,#2a1a4a 0%,#1a2a3a 50%,#2a1a2a 100%);border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-bottom:12px}
+.panel-art::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,rgba(255,107,107,.08) 0%,transparent 60%)}
+.art-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:24px 24px}
+.art-icon{font-size:48px;opacity:.15;z-index:1}
+.panel-text{font-size:13px;line-height:1.7;color:#e4e4e4;text-align:center;padding:0 12px}
+.panel-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid #2a2a4a}
+.dot-row{display:flex;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:#2a2a4a}
+.dot.active{background:${accent}}
+.meta{font-size:10px;color:${muted};letter-spacing:1px}
+</style></head><body><div class="panel"><div class="panel-inner">
+<div class="panel-header"><span class="panel-badge">${label} ${sceneNumber}</span><div class="panel-divider"></div></div>
+<div class="panel-art"><div class="art-grid"></div><span class="art-icon">${isBook ? '📖' : '🖼'}</span></div>
+<div class="panel-text">${lines}</div>
+<div class="panel-footer"><div class="dot-row">${Array.from({length:5},(_,j)=>`<span class="dot${j===sceneNumber%5?' active':''}"></span>`).join('')}</div><span class="meta">AI-GENERATED</span></div>
+</div></div></body></html>`;
+}
+
 export function StudioEditor() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
@@ -182,11 +218,11 @@ export function StudioEditor() {
                 {generatingId === scene.id ? (
                   <div className="generating">
                     <div className="spinner" />
-                    Generating...
+                    <span>Reading story…</span>
                   </div>
                 ) : scene.rendered_image_url ? (
                   <iframe
-                    srcDoc={`<html><body style="margin:0;background:#1a1a2e"><p style="color:#e4e4e4;padding:1rem;font-family:sans-serif">${isBook ? 'Scene' : 'Panel'} ${i + 1}</p></body></html>`}
+                    srcDoc={previewHtml(scene.narration_text, i + 1, isBook)}
                     title={`Preview ${i + 1}`}
                     className="scene-preview-frame"
                   />
@@ -195,7 +231,7 @@ export function StudioEditor() {
               <button
                 className="generate-btn"
                 onClick={() => handleGenerate(scene)}
-                disabled={generatingId === scene.id}
+                disabled={generatingId === scene.id || !scene.narration_text.trim()}
               >
                 {generatingId === scene.id ? 'Generating...' : 'Generate'}
               </button>

@@ -1,4 +1,4 @@
-# LMM — Local Development Workflow
+# Textweaver — Local Development Workflow
 
 > How to run everything on your machine without RunPod, Docker, or cloud costs.
 > You only spin up what you're working on.
@@ -23,8 +23,8 @@
 ## Step 1: Clone and Install
 
 ```bash
-git clone https://github.com/knivesthao/LMM.git
-cd LMM
+git clone https://github.com/knivesthao/Textweaver.git
+cd Textweaver
 
 # Frontend (React + Vite)
 npm install
@@ -57,7 +57,7 @@ You get these values once from Supabase dashboard → Settings → API. Write th
 
 ```bash
 # One terminal
-cd LMM
+cd Textweaver
 npm run dev
 # → Opens http://localhost:5173
 # → Supabase SDK connects directly to cloud Supabase
@@ -114,11 +114,11 @@ The placeholder image is just a PNG in `public/mock/` — could be a simple text
 
 ```bash
 # Terminal 1: Workers
-cd LMM/workers
+cd Textweaver/workers
 wrangler dev
 
 # Terminal 2: React
-cd LMM
+cd Textweaver
 npm run dev
 ```
 
@@ -147,11 +147,11 @@ This is the one part of development that isn't local. Everything else is.
 
 ```bash
 # 90% of the time — just this
-cd LMM && npm run dev
+cd Textweaver && npm run dev
 
 # When editing Workers API routes
-cd LMM/workers && wrangler dev               # Terminal 1
-cd LMM && npm run dev                         # Terminal 2
+cd Textweaver/workers && wrangler dev               # Terminal 1
+cd Textweaver && npm run dev                         # Terminal 2
 
 # When editing UE5 or Python backend
 git commit -am "fix: updated Blueprint orchestrator"

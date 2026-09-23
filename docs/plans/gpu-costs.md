@@ -99,7 +99,7 @@ If dev uses spot pricing ($0.19/hr) with risk of preemption:
 
 ## Verdict
 
-**RunPod is 5–10x cheaper than everything else.** At $651/yr total (spot pricing for dev, on-demand for prod), the entire LMM infrastructure costs less than a single month of AWS GPU time.
+**RunPod is 5–10x cheaper than everything else.** At $651/yr total (spot pricing for dev, on-demand for prod), the entire Textweaver infrastructure costs less than a single month of AWS GPU time.
 
 | Tier | Cost/yr | When to use |
 |------|---------|------------|

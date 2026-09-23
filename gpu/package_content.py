@@ -1,22 +1,15 @@
 #!/usr/bin/env python3
+# pyright: basic
 """
-LMM Content Packaging Script
+Textweaver Content Packaging Script
 
 Runs on the RunPod GPU machine after UE5 finishes rendering.
 Compresses rendered images to WebP, generates a scene manifest,
 uploads everything to Cloudflare R2, and inserts metadata into Supabase.
 
-Storage: Cloudflare R2 (chosen over Cloudinary for no-egress-fee media delivery
-in Southeast Asia — every downloaded comic costs $0 to serve).
-
 Usage:
-    python package_content.py \\
-        --input ./render_output/ \\
-        --title "The Brave Buffalo" \\
-        --language lao \\
-        --reading-level beginner \\
-        --price 5000 \\
-        --creator "Somsack"
+    python package_content.py --input ./render_output/ --title "The Brave Buffalo"
+        --language lao --reading-level beginner --price 5000 --creator "Somsack"
 
 Requires: pip install -r gpu/requirements.txt
 """
@@ -30,8 +23,10 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 from urllib.request import Request, urlopen
+
+import requests  # pyright: ignore
+from PIL import Image as PilImage
 
 MAX_WIDTH = 800
 WEBP_QUALITY = 75
@@ -43,7 +38,7 @@ R2_ACCESS_KEY = os.environ.get("R2_ACCESS_KEY", "")
 R2_SECRET_KEY = os.environ.get("R2_SECRET_KEY", "")
 R2_ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID", "")
 R2_BUCKET = os.environ.get("R2_BUCKET", "lmm-content")
-R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "")  # e.g. https://cdn.admais.xyz
+R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
@@ -51,10 +46,9 @@ SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
 # ---- Image compression ----
 
+
 def compress(input_path: str, output_path: str) -> int:
     """Compress image to WebP. Returns file size in bytes."""
-    from PIL import Image as PilImage
-
     img = PilImage.open(input_path)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGBA")
@@ -71,6 +65,7 @@ def compress(input_path: str, output_path: str) -> int:
 
 # ---- Cloudflare R2 upload (direct HTTP, no AWS SDK) ----
 
+
 def _sign(key: bytes, msg: str) -> bytes:
     return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
 
@@ -85,10 +80,7 @@ def _get_signature_key(
 
 
 def upload_r2(key: str, file_path: str) -> str:
-    """Upload a file to Cloudflare R2 using S3-compatible REST API. No AWS SDK needed.
-
-    Reference: https://developers.cloudflare.com/r2/api/s3/api/
-    """
+    """Upload a file to Cloudflare R2 using S3-compatible REST API."""
     if not all([R2_ACCESS_KEY, R2_SECRET_KEY, R2_ACCOUNT_ID]):
         print(
             f"Warning: R2 not configured, skipping upload of {key}",
@@ -111,7 +103,6 @@ def upload_r2(key: str, file_path: str) -> str:
     date_stamp = now.strftime("%Y%m%d")
 
     canonical_uri = f"/{R2_BUCKET}/{key}"
-    canonical_querystring = ""
     canonical_headers = (
         f"host:{host}\n"
         f"x-amz-content-sha256:{hashlib.sha256(body).hexdigest()}\n"
@@ -121,7 +112,7 @@ def upload_r2(key: str, file_path: str) -> str:
     payload_hash = hashlib.sha256(body).hexdigest()
 
     canonical_request = (
-        f"PUT\n{canonical_uri}\n{canonical_querystring}\n"
+        f"PUT\n{canonical_uri}\n\n"
         f"{canonical_headers}\n{signed_headers}\n{payload_hash}"
     )
 
@@ -167,10 +158,9 @@ def upload_r2(key: str, file_path: str) -> str:
 
 # ---- Supabase metadata ----
 
+
 def insert_metadata(meta: dict[str, Any]) -> str:
     """Insert content metadata into Supabase REST API. Returns the content ID."""
-    import requests  # type: ignore[import-untyped]
-
     resp = requests.post(
         f"{SUPABASE_URL}/rest/v1/content",
         headers={
@@ -188,13 +178,12 @@ def insert_metadata(meta: dict[str, Any]) -> str:
 
 # ---- Main ----
 
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Package LMM content")
+    parser = argparse.ArgumentParser(description="Package Textweaver content")
     parser.add_argument("--input", required=True)
     parser.add_argument("--title", required=True)
-    parser.add_argument(
-        "--language", required=True, choices=["lao", "english"]
-    )
+    parser.add_argument("--language", required=True, choices=["lao", "english"])
     parser.add_argument(
         "--reading-level",
         required=True,
@@ -238,7 +227,7 @@ def main() -> None:
     total_mb = total / (1024 * 1024)
     print(f"Total: {total_mb:.1f} MB / {TARGET_TOTAL_MB} MB target")
 
-    # Manifest
+    # Build and write manifest
     manifest: dict[str, Any] = {
         "total_scenes": len(scenes),
         "total_size_bytes": total,
@@ -246,7 +235,7 @@ def main() -> None:
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
-    # Upload to Supabase
+    # Upload metadata to Supabase
     content_id: str | None = None
     if not SUPABASE_URL:
         print("Warning: SUPABASE_URL not set — metadata will not be recorded")
@@ -267,7 +256,7 @@ def main() -> None:
         except Exception as e:
             print(f"Warning: Failed to insert metadata: {e}", file=sys.stderr)
 
-    # Upload to R2
+    # Upload images to R2
     if not R2_ACCESS_KEY:
         print(f"Warning: R2 not configured — files saved to {out_dir}")
     elif content_id:

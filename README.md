@@ -1,12 +1,12 @@
-# LMM — Laos Media Machine
+# Textweaver — Textweaver
 
 AI-powered platform that generates comics and interactive books for language learners in Laos and Southeast Asia.
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/knivesthao/LMM.git
-cd LMM
+git clone https://github.com/knivesthao/Textweaver.git
+cd Textweaver
 npm install
 cp .env.example .env   # fill in your Supabase URL + key
 npm run dev            # opens http://localhost:5173

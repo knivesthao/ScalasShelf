@@ -1,4 +1,4 @@
-# LMM Project Context
+# Textweaver Project Context
 
 > AI-generated comics & interactive books platform for Laos
 > Reading materials for English + Lao language learners

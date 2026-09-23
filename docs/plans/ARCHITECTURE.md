@@ -1,4 +1,4 @@
-# LMM Architecture
+# Textweaver Architecture
 
 > Single source of truth for the entire stack. Providers, costs, and how they connect.
 > Updated: 2026-07-13

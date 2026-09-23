@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('LMM UI Walkthrough', () => {
+test.describe('Textweaver UI Walkthrough', () => {
   test('1. Library — loads catalog with search and filters', async ({ page }) => {
     await page.goto('http://localhost:5173');
-    await expect(page.getByText('LMM Library')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Textweaver')).toBeVisible({ timeout: 5000 });
     await expect(page.getByPlaceholder('Search books...')).toBeVisible();
     await expect(page.getByLabel('Filter by language')).toBeVisible();
     await expect(page.getByText('My Library')).toBeVisible();

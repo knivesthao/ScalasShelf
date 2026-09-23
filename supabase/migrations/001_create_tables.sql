@@ -1,4 +1,4 @@
--- LMM Database Schema
+-- Textweaver Database Schema
 -- Apply via: supabase db push
 
 -- Content catalog
