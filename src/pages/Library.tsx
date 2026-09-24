@@ -1,112 +1,74 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
-
-interface Content {
-  id: string;
-  title: string;
-  creator_name: string;
-  language: 'lao' | 'english';
-  reading_level: 'beginner' | 'intermediate' | 'advanced';
-  cover_image_url: string;
-  price_kip: number;
-  description: string;
-}
+import { listBooks, type BookCard } from '@/lib/books';
+import { LEVELS, type Level } from '@/lib/format';
 
 export function Library() {
-  const [content, setContent] = useState<Content[]>([]);
+  const [books, setBooks] = useState<BookCard[]>([]);
   const [search, setSearch] = useState('');
-  const [language, setLanguage] = useState<string>('all');
+  const [level, setLevel] = useState<Level | ''>('');
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
-    async function fetchContent() {
-      setLoading(true);
-      let query = supabase.from('content').select('*');
+    setLoading(true);
+    listBooks(level || undefined)
+      .then((list) => { setBooks(list); setOffline(false); })
+      .catch(() => setOffline(true))
+      .finally(() => setLoading(false));
+  }, [level]);
 
-      if (language !== 'all') {
-        query = query.eq('language', language);
-      }
-
-      const { data, error } = await query;
-      if (error) {
-        console.error('Failed to load catalog:', error.message);
-      } else {
-        setContent(data || []);
-      }
-      setLoading(false);
-    }
-
-    fetchContent();
-  }, [language]);
-
-  const filtered = content.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase())
-  );
-
-  if (loading) {
-    return (
-      <div className="library">
-        <div className="loading">Loading...</div>
-      </div>
-    );
-  }
+  const query = search.trim().toLowerCase();
+  const filtered = books.filter((b) => !query || `${b.title} ${b.description}`.toLowerCase().includes(query));
 
   return (
     <div className="library">
       <header className="library-header">
         <h1>Textweaver</h1>
-        <nav>
+        <nav className="header-nav">
           <Link to="/my-library">My Library</Link>
-          {user && <span className="user-phone">{user.phone}</span>}
+          <Link to="/studio">Studio</Link>
         </nav>
       </header>
 
+      <p className="tagline">Free English comics for learners. Download them and read anywhere, even without internet.</p>
+
       <div className="filters">
         <input
-          type="text"
+          type="search"
           placeholder="Search books..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="search-input"
           aria-label="Search books"
         />
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          aria-label="Filter by language"
-        >
-          <option value="all">All Languages</option>
-          <option value="lao">ລາວ</option>
-          <option value="english">English</option>
+        <select value={level} onChange={(e) => setLevel(e.target.value as Level | '')} aria-label="Filter by level">
+          <option value="">All levels</option>
+          {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
         </select>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="loading">Loading...</div>
+      ) : offline ? (
         <div className="empty">
-          <p>No books found.</p>
+          <p>You’re offline. Books you’ve downloaded are still here:</p>
+          <Link to="/my-library" className="buy-btn">Open My Library</Link>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="empty"><p>No books found.</p></div>
       ) : (
         <div className="content-grid" role="list">
-          {filtered.map((item) => (
-            <Link
-              to={`/book/${item.id}`}
-              key={item.id}
-              className="content-card"
-              role="listitem"
-            >
-              <img
-                src={item.cover_image_url || '/mock/cover-placeholder.svg'}
-                alt={item.title}
-                loading="lazy"
-              />
+          {filtered.map((book) => (
+            <Link to={`/book/${book.id}`} key={book.id} className="content-card" role="listitem">
+              {book.cover_url ? (
+                <img src={book.cover_url} alt="" loading="lazy" />
+              ) : (
+                <div className="cover-placeholder" aria-hidden>📖</div>
+              )}
               <div className="card-body">
-                <h2>{item.title}</h2>
-                <span className="badge">{item.language}</span>
-                <span className="badge">{item.reading_level}</span>
-                <p className="price">{item.price_kip.toLocaleString()} kip</p>
+                <h2>{book.title}</h2>
+                <span className="badge">{book.level}</span>
               </div>
             </Link>
           ))}

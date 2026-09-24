@@ -4,3 +4,10 @@ dist/
 .DS_Store
 __pycache__/
 recordings/
+
+# Local API database (SQLite stand-in for Cloudflare D1) and uploaded files
+.data/
+tsconfig.tsbuildinfo
+
+# Wrangler local state
+.wrangler/

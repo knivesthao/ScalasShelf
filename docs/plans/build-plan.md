@@ -1,3 +1,5 @@
+> **Superseded (2026-09-24):** this describes the earlier Supabase + QR-payment prototype. Current setup: `README.md`; current design: `backend-architecture.md` and `MVP.md`.
+
 # Textweaver — Build Plan (Prompt-by-Prompt)
 
 > **Build order:** Digital Library first → Creator Studio second.

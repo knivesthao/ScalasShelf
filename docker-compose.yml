@@ -9,8 +9,6 @@ services:
       - .:/app
       - /app/node_modules
     environment:
-      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-}
-      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-}
       - CHOKIDAR_USEPOLLING=true
     command: npx vite --host 0.0.0.0 --port 5173
 

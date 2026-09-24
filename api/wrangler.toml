@@ -1,0 +1,37 @@
+# Textweaver on Cloudflare Workers (free plan): the API on /api/* plus the built app.
+#
+# Done already (2026-09-24): D1 database "textweaver" created in APAC, migrations applied.
+#
+# Still to do (see README → Deploying):
+#   1. Enable R2 in the Cloudflare dashboard, then:
+#        npx wrangler r2 bucket create textweaver-files   and uncomment [[r2_buckets]] below
+#      (Only needed for Studio voice recordings, which are on hold.)
+#   2. npx wrangler secret put WORKER_SECRET               (shared with the GPU worker, later)
+#   3. From the repo root: npm run build, then from api/: npx wrangler deploy
+#
+# Schema changes: add a file to migrations/, then  npx wrangler d1 migrations apply textweaver --remote
+#
+# `wrangler dev` needs macOS 13.5+; on older Macs use `npm run dev` from the repo root,
+# which runs this same API on Node with SQLite (api/src/devServer.ts).
+
+name = "textweaver"
+main = "src/worker.ts"
+compatibility_date = "2026-09-01"
+
+# The built app (npm run build → dist/). Asset requests are free and don't count
+# against Worker limits; /api/* runs the Worker, other unknown paths get index.html.
+[assets]
+directory = "../dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "textweaver"
+database_id = "0778adf4-8b67-474e-bd60-afdb5095994b"
+migrations_dir = "migrations"
+
+# Uncomment once R2 is enabled and the bucket exists:
+# [[r2_buckets]]
+# binding = "FILES"
+# bucket_name = "textweaver-files"

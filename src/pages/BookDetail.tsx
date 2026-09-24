@@ -1,130 +1,107 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
-
-interface Content {
-  id: string;
-  title: string;
-  creator_name: string;
-  language: 'lao' | 'english';
-  reading_level: string;
-  cover_image_url: string;
-  price_kip: number;
-  description: string;
-}
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { bookBytes, formatBytes, loadBook, type Book } from '@/lib/books';
+import { LEVELS } from '@/lib/format';
+import { removeSavedBook, saveBookOffline } from '@/lib/offline';
 
 export function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [book, setBook] = useState<Content | null>(null);
+  const [book, setBook] = useState<Book | null>(null);
+  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [purchasing, setPurchasing] = useState(false);
-  const [purchaseError, setPurchaseError] = useState('');
-  const { user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
 
   useEffect(() => {
-    async function fetchBook() {
-      if (!id) return;
-      const { data, error } = await supabase
-        .from('content')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        console.error('Failed to load book:', error.message);
-      } else {
-        setBook(data);
-      }
-      setLoading(false);
-    }
-
-    fetchBook();
+    if (!id) return;
+    loadBook(id)
+      .then(({ book: b, saved: s }) => { setBook(b); setSaved(s); })
+      .catch(() => setError('This book isn’t on your phone, and there’s no internet connection.'))
+      .finally(() => setLoading(false));
   }, [id]);
 
-  async function handleBuy() {
-    if (!user) {
-      setPurchaseError('Please log in to purchase books.');
-      return;
+  async function download() {
+    if (!book) return;
+    setError(null);
+    setProgress(0);
+    try {
+      await saveBookOffline(book, (done, total) => setProgress(done / total));
+      setSaved(true);
+    } catch {
+      setError('Download stopped. Try again when you have a connection; it will continue where it left off.');
+    } finally {
+      setProgress(null);
     }
-
-    if (!book || !id) return;
-    setPurchasing(true);
-    setPurchaseError('');
-
-    // In dev mode, skip payment and purchase directly
-    if (import.meta.env.DEV) {
-      const { error } = await supabase.from('purchases').insert({
-        user_id: user.id,
-        content_id: id,
-      });
-
-      if (error) {
-        setPurchaseError('Purchase failed. Please try again.');
-      } else {
-        navigate('/my-library');
-        return;
-      }
-    } else {
-      // Real flow: record as pending payment
-      const { error } = await supabase.from('payments').insert({
-        user_id: user.id,
-        content_id: id,
-        amount_kip: book.price_kip,
-        status: 'pending',
-      });
-
-      if (error) {
-        setPurchaseError('Payment failed. Please try again.');
-      } else {
-        navigate(`/purchase/${id}`);
-        return;
-      }
-    }
-
-    setPurchasing(false);
   }
 
-  if (loading) {
-    return <div className="book-detail"><div className="loading">Loading...</div></div>;
+  async function remove() {
+    if (!book) return;
+    await removeSavedBook(book.id);
+    setSaved(false);
   }
 
+  if (loading) return <div className="book-detail"><div className="loading">Loading...</div></div>;
   if (!book) {
     return (
       <div className="book-detail">
-        <div className="empty"><p>Book not found.</p></div>
+        <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+        <div className="empty"><p>{error ?? 'Book not found.'}</p></div>
       </div>
     );
   }
 
+  const { manifest, text } = book.package;
+  const sceneCount = manifest.editions.lite.chunks.reduce((n, c) => n + c.scenes.length, 0);
+  const bytes = bookBytes(book);
+  const levelLabel = LEVELS.find((l) => l.id === book.level)?.label ?? book.level;
+
   return (
     <div className="book-detail">
-      <button className="back-btn" onClick={() => navigate(-1)}>
-        ← Back
-      </button>
+      <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
 
       <div className="book-hero">
-        <img src={book.cover_image_url || '/mock/cover-placeholder.svg'} alt={book.title} />
+        {book.cover_url ? <img src={book.cover_url} alt="" /> : <div className="cover-placeholder" aria-hidden>📖</div>}
         <div className="book-info">
           <h1>{book.title}</h1>
-          <p className="creator">by {book.creator_name}</p>
           <div className="tags">
-            <span className="badge">{book.language}</span>
-            <span className="badge">{book.reading_level}</span>
+            <span className="badge">{levelLabel}</span>
+            <span className="badge">Free</span>
           </div>
-          <p className="description">{book.description}</p>
-          <p className="price">{book.price_kip.toLocaleString()} kip</p>
-          {purchaseError && <p className="error-message">{purchaseError}</p>}
-          <button
-            className="buy-btn"
-            onClick={handleBuy}
-            disabled={purchasing}
-          >
-            {purchasing ? 'Processing...' : 'Buy'}
-          </button>
+          {book.description && <p className="description">{book.description}</p>}
+          <p className="book-facts">
+            {sceneCount} {sceneCount === 1 ? 'scene' : 'scenes'} · {text.vocab.length} new words
+            {text.quiz.length > 0 && ` · ${text.quiz.length}-question check`}
+            {bytes && ` · ${formatBytes(bytes)}`}
+          </p>
+
+          <div className="book-actions">
+            <Link to={`/read/${book.id}`} className="buy-btn">Read</Link>
+            {saved ? (
+              <>
+                <span className="saved-badge">✓ Saved on this phone</span>
+                <button className="ghost-btn" onClick={remove}>Remove</button>
+              </>
+            ) : (
+              <button className="ghost-btn" onClick={download} disabled={progress !== null}>
+                {progress !== null ? `Downloading… ${Math.round(progress * 100)}%` : 'Download for offline'}
+              </button>
+            )}
+          </div>
+          {error && <p className="error-message" role="alert">{error}</p>}
         </div>
       </div>
+
+      {text.vocab.length > 0 && (
+        <section className="vocab-preview">
+          <h2>Words in this story</h2>
+          <ul>
+            {text.vocab.map((v) => (
+              <li key={v.id}><strong lang="en">{v.headword}</strong>{v.meaning && <span>: {v.meaning}</span>}</li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

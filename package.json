@@ -11,10 +11,14 @@
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "record": "playwright test --config=playwright.record.config.ts",
-    "record:headed": "playwright test --config=playwright.record.config.ts --headed"
+    "record:headed": "playwright test --config=playwright.record.config.ts --headed",
+    "seed:remote": "vite-node api/scripts/seed-sql.ts && cd api && npx wrangler d1 execute textweaver --remote --file ../.data/seed-remote.sql",
+    "deploy": "npm run build && cd api && npx wrangler deploy"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
+    "@hono/node-server": "^2.1.1",
+    "better-sqlite3": "^13.0.3",
+    "hono": "^4.13.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.0"
@@ -23,6 +27,7 @@
     "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^16.0.0",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.1.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

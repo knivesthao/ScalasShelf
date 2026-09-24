@@ -1,6 +1,8 @@
-# Textweaver — Textweaver
+# Textweaver
 
-AI-powered platform that generates comics and interactive books for language learners in Laos and Southeast Asia.
+A free English-learning app for students in Laos: short animated comics, written for
+their level, that download once and read anywhere, even without internet. Includes a
+Studio where writers turn a few lines of English into an animated comic.
 
 ## Quick Start
 
@@ -8,51 +10,46 @@ AI-powered platform that generates comics and interactive books for language lea
 git clone https://github.com/knivesthao/Textweaver.git
 cd Textweaver
 npm install
-cp .env.example .env   # fill in your Supabase URL + key
-npm run dev            # opens http://localhost:5173
+npm run dev            # app + API on http://localhost:5173
 ```
 
-## Environment Variables
+That's all: no accounts or keys needed. `npm run dev` also runs the API (Hono, in
+`api/`) on `/api`, backed by a local SQLite database in `.data/` that is created and
+seeded with demo content on first run: a published comic ("Morning Market") and a
+draft to finish in the Studio ("Noy and the Buffalo"). Delete `.data/` to reset.
 
-Copy `.env.example` to `.env` and fill in:
+- Library: `/` · My Library (saved on this device): `/my-library` · Studio: `/studio`
+- Scene art in development comes from the demo art pack in `public/demo-art/`
+  (regenerate with `scripts/generate-demo-art.py`).
+- Offline mode needs the production build: `npm run build && npm run preview`, open
+  the site once, download a book, then go offline.
 
-| Variable | Where to get it |
-|----------|-----------------|
-| `VITE_SUPABASE_URL` | Supabase dashboard → Settings → API → Project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase dashboard → Settings → API → anon public key |
+## Architecture
 
-No other setup needed. The app uses Supabase (database + auth) and Cloudflare (hosting) — both run for free during development.
+Cloudflare, on free tiers: one Worker serves the app and the API (Hono), with D1 as the
+database and R2 for files. See `docs/plans/backend-architecture.md`.
 
 ## Running Tests
 
 ```bash
-npm test              # run once
-npm run test:watch    # re-run on changes
+npm test               # unit, API and page tests (Vitest)
+npx playwright test    # browser walkthrough; needs `npm run dev` running
+npm run record         # demo video clips into ./recordings (reset .data/ first)
 ```
 
-## Project Structure
+## Live site
 
-```
-src/
-├── main.tsx              # Entry point
-├── App.tsx               # Routes: / /book/:id /purchase/:id /read/:id /my-library
-├── components/           # Shared components (ErrorBoundary)
-├── hooks/                # useAuth — Supabase phone auth
-├── lib/                  # supabase client, IndexedDB storage
-├── pages/                # Library, BookDetail, Purchase, Reader, MyLibrary
-└── index.css             # All styles
-
-supabase/migrations/       # Database schema + business functions
-public/mock/               # Placeholder content for dev
-```
-
-## Deploy
+**https://textweaver.knives-thao.workers.dev** — one Cloudflare Worker (free plan)
+serving the app and the API, with the D1 database `textweaver` (APAC).
 
 ```bash
-# Frontend auto-deploys on `git push` (Cloudflare Pages integration)
-git push origin main
-
-# Set Cloudflare environment variables (one time):
-npx wrangler secret put VITE_SUPABASE_URL
-npx wrangler secret put VITE_SUPABASE_ANON_KEY
+npm run deploy         # build + deploy (needs `npx wrangler login` once)
+npm run seed:remote    # (re)load the demo books into the Cloudflare database
 ```
+
+What's switched off for now (`src/lib/features.ts`):
+- **Studio is writing-only and saved on the writer's device.** No scene art, panel
+  layout or audio, and no publishing. Nothing from the Studio reaches the database;
+  the API refuses all writes until sign-in exists.
+- Voice recordings also need R2: enable it in the Cloudflare dashboard, create the
+  bucket, and uncomment `[[r2_buckets]]` in `api/wrangler.toml`.

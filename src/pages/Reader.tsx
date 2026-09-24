@@ -1,284 +1,146 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import {
-  storeScene,
-  getScene,
-  isSceneDownloaded,
-  getDownloadedScenes,
-} from '@/lib/idb';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { MotionPanel, type PanelBubble } from '@/components/MotionPanel';
+import { Quiz } from '@/components/Quiz';
+import { loadBook, type Book } from '@/lib/books';
+import { bareWord, type AssetRef, type PublishedScene, type Token } from '@/lib/format';
+import { savedImageUrls } from '@/lib/offline';
 
-interface SceneManifest {
-  content_id: string;
-  title: string;
-  total_scenes: number;
-  total_size_bytes: number;
-  scenes: { number: number; url: string; size_bytes: number }[];
+// Reads a published comic: panels in a vertical scroll, each animating when it comes
+// into view, words tappable for their meaning, and the quiz at the end. Saved books
+// load from the phone (no internet needed); others stream from the library.
+
+const STILL_KEY = 'tw-still-mode';
+
+function readStill(): boolean {
+  try { return localStorage.getItem(STILL_KEY) === '1'; } catch { return false; }
 }
 
-type DownloadState = 'pending' | 'downloading' | 'done' | 'cached';
+/** Replays a panel's entrance animation each time it scrolls into view. */
+function InView({ children }: { children: (playKey: number) => React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [playKey, setPlayKey] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setPlayKey((k) => k + 1); }, { threshold: 0.5 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return <div ref={ref} className="reader-panel">{children(playKey)}</div>;
+}
 
 export function Reader() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [currentScene, setCurrentScene] = useState(0);
-  const [sceneHtml, setSceneHtml] = useState<string | null>(null);
-  const [manifest, setManifest] = useState<SceneManifest | null>(null);
-  const [sceneStates, setSceneStates] = useState<Map<number, DownloadState>>(
-    new Map()
-  );
-  const [loading, setLoading] = useState(true);
-  const [downloadingAll, setDownloadingAll] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const loadingRef = useRef<Set<string>>(new Set());
+  const [book, setBook] = useState<Book | null>(null);
+  const [assets, setAssets] = useState<Record<string, AssetRef>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [still, setStill] = useState(readStill);
+  const [word, setWord] = useState<{ token: Token } | null>(null);
 
-  // Load manifest
   useEffect(() => {
-    async function load() {
-      if (!id) return;
-
-      if (import.meta.env.DEV) {
-        // Dev: use mock manifest
-        const response = await fetch(`/mock/content/1/manifest.json`);
-        const mockManifest: SceneManifest = await response.json();
-        setManifest(mockManifest);
-
-        // Check what's cached
-        const downloaded = await getDownloadedScenes(id);
-        const states = new Map<number, DownloadState>();
-        for (const n of downloaded) {
-          states.set(n, 'cached');
+    if (!id) return;
+    let objectUrls: string[] = [];
+    loadBook(id)
+      .then(async ({ book: b, saved }) => {
+        const lite = b.package.manifest.editions.lite.assets;
+        if (saved) {
+          const urls = await savedImageUrls(b);
+          objectUrls = Object.values(urls);
+          setAssets(Object.fromEntries(Object.entries(lite).map(([k, a]) => [k, { ...a, url: urls[k] ?? a.url }])));
+        } else {
+          setAssets(lite);
         }
-        setSceneStates(states);
-      } else {
-        // Production: fetch manifest from API
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error || !data) {
-          setLoading(false);
-          return;
-        }
-
-        // Build manifest from project scenes
-        // Workers would return this; for now construct from DB
-      }
-
-      setLoading(false);
-    }
-    load();
+        setBook(b);
+      })
+      .catch(() => setError('This book isn’t on your phone, and there’s no internet connection.'));
+    return () => objectUrls.forEach((u) => URL.revokeObjectURL(u));
   }, [id]);
 
-  // Load current scene from cache or network
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!manifest || !id) return;
+  const scenes: PublishedScene[] = useMemo(() => {
+    if (!book) return [];
+    const { manifest, chunks } = book.package;
+    return manifest.editions.lite.chunks.flatMap((c) => chunks[c.url]?.scenes ?? []);
+  }, [book]);
 
-    const scene = manifest.scenes[currentScene];
-    if (!scene) return;
-
-    const key = `${id}-${scene.number}`;
-    if (loadingRef.current.has(key)) return; // Already loading
-
-    if (sceneStates.get(scene.number) === 'cached') {
-      getScene(id, scene.number).then((html) => setSceneHtml(html));
-      return;
-    }
-
-    // Fetch from network, cache it
-    loadingRef.current.add(key);
-    setSceneHtml(null);
-    setSceneStates((prev) => {
-      const next = new Map(prev);
-      next.set(scene.number, 'downloading');
-      return next;
+  function toggleStill() {
+    setStill((s) => {
+      try { localStorage.setItem(STILL_KEY, s ? '0' : '1'); } catch { /* private mode */ }
+      return !s;
     });
+  }
 
-    fetch(scene.url)
-      .then((r) => r.text())
-      .then((html) => {
-        setSceneHtml(html);
-        return storeScene(id, scene.number, html, scene.url);
-      })
-      .then(() => {
-        setSceneStates((prev) => {
-          const next = new Map(prev);
-          next.set(scene.number, 'cached');
-          return next;
-        });
-      })
-      .catch(() => {
-        setSceneStates((prev) => {
-          const next = new Map(prev);
-          next.set(scene.number, 'pending');
-          return next;
-        });
-      })
-      .finally(() => {
-        loadingRef.current.delete(key);
-      });
-  }, [manifest, currentScene, id]);
-
-  const goToScene = useCallback(
-    (index: number) => {
-      if (index >= 0 && index < (manifest?.total_scenes ?? 0)) {
-        setCurrentScene(index);
-      }
-    },
-    [manifest]
-  );
-
-  const downloadAll = useCallback(async () => {
-    if (!manifest || !id) return;
-    setDownloadingAll(true);
-    setProgress(0);
-
-    for (let i = 0; i < manifest.scenes.length; i++) {
-      const scene = manifest.scenes[i];
-
-      // Skip if already cached
-      if (await isSceneDownloaded(id, scene.number)) {
-        setProgress(((i + 1) / manifest.scenes.length) * 100);
-        continue;
-      }
-
-      setProgress(((i + 0.5) / manifest.scenes.length) * 100);
-
-      try {
-        const response = await fetch(scene.url);
-        const html = await response.text();
-        await storeScene(id, scene.number, html, scene.url);
-      } catch {
-        // Skip failed downloads, try again later
-      }
-
-      setProgress(((i + 1) / manifest.scenes.length) * 100);
-    }
-
-    // Refresh cached states
-    const downloaded = await getDownloadedScenes(id);
-    const states = new Map<number, DownloadState>();
-    for (const n of downloaded) {
-      states.set(n, 'cached');
-    }
-    setSceneStates(states);
-    setDownloadingAll(false);
-  }, [manifest, id]);
-
-  if (loading) {
+  if (error) {
     return (
       <div className="reader">
-        <div className="loading">Loading...</div>
+        <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+        <div className="empty"><p>{error}</p><Link to="/my-library" className="buy-btn">My Library</Link></div>
       </div>
     );
   }
+  if (!book) return <div className="reader"><div className="loading">Loading...</div></div>;
 
-  if (!manifest) {
-    return (
-      <div className="reader">
-        <div className="empty"><p>Content not found.</p></div>
-      </div>
-    );
-  }
-
-  const cachedCount = [...sceneStates.values()].filter(
-    (s) => s === 'cached'
-  ).length;
-  const allCached = cachedCount === manifest.total_scenes;
+  const { text } = book.package;
+  const bubblesFor = (scene: PublishedScene): PanelBubble[] =>
+    scene.bubbles.map((b) => ({ ...b, text: text.bubbles[b.id]?.text ?? { en: '' }, tokens: text.bubbles[b.id]?.tokens ?? {} }));
 
   return (
     <div className="reader">
       <div className="reader-toolbar">
-        <button className="back-btn" onClick={() => navigate(-1)}>
-          ← Back
-        </button>
-        <span className="scene-counter">
-          {currentScene + 1} / {manifest.total_scenes}
-        </span>
-        {!allCached && (
-          <button
-            className="download-all-btn"
-            onClick={downloadAll}
-            disabled={downloadingAll}
-          >
-            {downloadingAll
-              ? `${Math.round(progress)}%`
-              : `Download All (${manifest.total_scenes - cachedCount} left)`}
-          </button>
-        )}
-        {allCached && <span className="cached-badge">✓ Offline</span>}
+        <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+        <h1 className="reader-title">{book.title}</h1>
+        <label className="toggle">
+          <input type="checkbox" checked={still} onChange={toggleStill} />
+          Still
+        </label>
       </div>
 
-      {downloadingAll && (
-        <div className="download-bar">
-          <div
-            className="download-bar-fill"
-            style={{ width: `${progress}%` }}
-          />
+      <p className="hint reader-hint">Tap any word to see what it means.</p>
+
+      <div className="reader-scroll">
+        {scenes.map((scene) => (
+          <InView key={scene.n}>
+            {(playKey) => (
+              <MotionPanel
+                aspect={scene.aspect}
+                layers={scene.layers}
+                bubbles={bubblesFor(scene)}
+                assets={assets}
+                still={still}
+                playKey={playKey}
+                onWordTap={(bubbleId, i) => {
+                  const token = text.bubbles[bubbleId]?.tokens.en?.[i];
+                  if (token) setWord({ token });
+                }}
+              />
+            )}
+          </InView>
+        ))}
+
+        <section className="reader-end">
+          {text.quiz.length > 0 ? (
+            <>
+              <h2>Check your understanding</h2>
+              <Quiz items={text.quiz} />
+            </>
+          ) : (
+            <h2>The End</h2>
+          )}
+          <Link to="/" className="ghost-btn">More books</Link>
+        </section>
+      </div>
+
+      {word && (
+        <div className="word-sheet" role="dialog" aria-label="Word meaning" onClick={() => setWord(null)}>
+          <div className="word-sheet-card" onClick={(e) => e.stopPropagation()}>
+            <p className="word-sheet-word" lang="en">{bareWord(word.token.t)}</p>
+            {word.token.v && <span className="badge">New word</span>}
+            <p className="word-sheet-meaning">{word.token.gloss || 'No meaning added for this word yet.'}</p>
+            <button className="ghost-btn" onClick={() => setWord(null)}>Close</button>
+          </div>
         </div>
       )}
-
-      <div
-        className="scene-viewport"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowRight') goToScene(currentScene + 1);
-          if (e.key === 'ArrowLeft') goToScene(currentScene - 1);
-        }}
-      >
-        {sceneHtml ? (
-          <iframe
-            srcDoc={sceneHtml}
-            title={`Scene ${currentScene + 1}`}
-            className="scene-frame"
-            sandbox=""
-          />
-        ) : (
-          <div className="loading">
-            <div className="spinner" />
-            <p>Loading scene...</p>
-            <div className="scene-progress">
-              <div
-                className="scene-progress-fill"
-                style={{ width: `${(cachedCount / manifest.total_scenes) * 100}%` }}
-              />
-            </div>
-            <p className="hint">
-              {cachedCount}/{manifest.total_scenes} scenes cached
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="reader-nav">
-        <button
-          onClick={() => goToScene(currentScene - 1)}
-          disabled={currentScene === 0}
-        >
-          ← Prev
-        </button>
-        <div className="scene-dots">
-          {manifest.scenes.map((_, i) => (
-            <button
-              key={i}
-              className={`dot ${i === currentScene ? 'active' : ''} ${
-                sceneStates.get(i + 1) === 'cached' ? 'cached' : ''
-              }`}
-              onClick={() => goToScene(i)}
-              aria-label={`Scene ${i + 1}`}
-            />
-          ))}
-        </div>
-        <button
-          onClick={() => goToScene(currentScene + 1)}
-          disabled={currentScene === manifest.total_scenes - 1}
-        >
-          Next →
-        </button>
-      </div>
     </div>
   );
 }

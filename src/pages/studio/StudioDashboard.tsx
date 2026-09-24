@@ -1,0 +1,107 @@
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ApiError } from '@/lib/api';
+import { FEATURES } from '@/lib/features';
+import { studioStore } from '@/lib/studioStore';
+import { LEVELS, type Level } from '@/lib/format';
+
+interface ProjectCard {
+  id: string;
+  type: string;
+  title: string;
+  level: Level;
+  status: string;
+}
+
+export function StudioDashboard() {
+  const navigate = useNavigate();
+  const [projects, setProjects] = useState<ProjectCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [signedOut, setSignedOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [title, setTitle] = useState('');
+  const [level, setLevel] = useState<Level>('A1');
+
+  useEffect(() => {
+    studioStore.list()
+      .then(setProjects)
+      .catch((e: Error) => (e instanceof ApiError && e.status === 401 ? setSignedOut(true) : setError(e.message)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function createProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    try {
+      const project = await studioStore.create({ title: title.trim(), level });
+      navigate(`/studio/${project.type}/${project.id}`);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  if (loading) return <div className="loading">Loading...</div>;
+  if (signedOut) return <div className="empty"><p>Log in to create content.</p></div>;
+
+  return (
+    <div className="studio">
+      <header className="library-header">
+        <h1>Creator Studio</h1>
+        <Link to="/">← Library</Link>
+      </header>
+      {error && <p className="studio-error" role="alert">{error}</p>}
+      {!FEATURES.cloudStudio && (
+        <p className="studio-note">
+          Write your story, choose the words to teach, and build the quiz. Drafts are saved on this device.
+          {!FEATURES.rendering && ' Illustrations and publishing are coming soon.'}
+        </p>
+      )}
+
+      {creating ? (
+        <form className="new-project" onSubmit={createProject}>
+          <h2>New English comic</h2>
+          <label>
+            Title
+            <input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Noy and the Buffalo"
+            />
+          </label>
+          <label>
+            Level
+            <select value={level} onChange={(e) => setLevel(e.target.value as Level)}>
+              {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+            </select>
+          </label>
+          <div className="new-project-actions">
+            <button type="submit" className="buy-btn" disabled={!title.trim()}>Create</button>
+            <button type="button" className="ghost-btn" onClick={() => setCreating(false)}>Cancel</button>
+          </div>
+        </form>
+      ) : (
+        <div className="studio-actions">
+          <button className="buy-btn" onClick={() => setCreating(true)}>+ New Comic</button>
+        </div>
+      )}
+
+      {projects.length === 0 ? (
+        <div className="empty"><p>No projects yet.</p></div>
+      ) : (
+        <div className="content-grid">
+          {projects.map((p) => (
+            <Link to={`/studio/${p.type}/${p.id}`} key={p.id} className="content-card">
+              <div className="card-body">
+                <h2>{p.title}</h2>
+                <span className="badge">{p.level}</span>
+                <span className="badge">{p.status}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

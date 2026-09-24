@@ -1,0 +1,110 @@
+{
+  "backgrounds": [
+    {
+      "id": "bg-market",
+      "file": "bg-market.webp",
+      "keywords": [
+        "market",
+        "stall",
+        "shop",
+        "buy",
+        "sell",
+        "mango"
+      ],
+      "width": 576,
+      "height": 1024,
+      "bytes": 41904
+    },
+    {
+      "id": "bg-ricefield-sunrise",
+      "file": "bg-ricefield-sunrise.webp",
+      "keywords": [
+        "rice",
+        "field",
+        "paddy",
+        "farm",
+        "sunrise",
+        "morning"
+      ],
+      "width": 576,
+      "height": 1024,
+      "bytes": 35060
+    },
+    {
+      "id": "bg-school",
+      "file": "bg-school.webp",
+      "keywords": [
+        "school",
+        "classroom",
+        "teacher",
+        "yard",
+        "class"
+      ],
+      "width": 576,
+      "height": 1024,
+      "bytes": 9710
+    },
+    {
+      "id": "bg-village-path",
+      "file": "bg-village-path.webp",
+      "keywords": [
+        "path",
+        "road",
+        "grass",
+        "village",
+        "walk",
+        "stops"
+      ],
+      "width": 576,
+      "height": 1024,
+      "bytes": 35916
+    }
+  ],
+  "characters": [
+    {
+      "id": "ch-buffalo",
+      "file": "ch-buffalo.webp",
+      "names": [
+        "buffalo"
+      ],
+      "width": 800,
+      "height": 738,
+      "bytes": 38798
+    },
+    {
+      "id": "ch-noy",
+      "file": "ch-noy.webp",
+      "names": [
+        "noy",
+        "girl"
+      ],
+      "width": 316,
+      "height": 800,
+      "bytes": 29664
+    },
+    {
+      "id": "ch-teacher",
+      "file": "ch-teacher.webp",
+      "names": [
+        "teacher",
+        "khru"
+      ],
+      "width": 307,
+      "height": 800,
+      "bytes": 34278
+    },
+    {
+      "id": "ch-vendor",
+      "file": "ch-vendor.webp",
+      "names": [
+        "vendor",
+        "seller",
+        "grandmother",
+        "grandma"
+      ],
+      "width": 641,
+      "height": 800,
+      "bytes": 61548
+    }
+  ]
+}

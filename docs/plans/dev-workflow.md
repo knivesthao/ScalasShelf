@@ -1,3 +1,5 @@
+> **Superseded (2026-09-24):** this describes the earlier Supabase + QR-payment prototype. Current setup: `README.md`; current design: `backend-architecture.md` and `MVP.md`.
+
 # Textweaver — Local Development Workflow
 
 > How to run everything on your machine without RunPod, Docker, or cloud costs.

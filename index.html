@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="lo">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,27 +9,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!--
-      Local demo mode. Visit /?demo=1 on localhost to browse Studio, Admin and the
-      purchase flow against the in-memory mock backend (src/lib/supabase.ts), with no
-      login and no Supabase. /?demo=0 turns it off.
-
-      This must run before the app's modules load, because supabase.ts reads the flag
-      when it builds its client — setting it from main.tsx would be too late. Gated on
-      localhost, so it can never activate on a deployed build.
-    -->
-    <script>
-      (function () {
-        var host = location.hostname;
-        if (host !== 'localhost' && host !== '127.0.0.1') return;
-        var param = new URLSearchParams(location.search).get('demo');
-        if (param === '1') sessionStorage.setItem('tw-demo', '1');
-        if (param === '0') sessionStorage.removeItem('tw-demo');
-        if (sessionStorage.getItem('tw-demo') === '1') {
-          window.__TEXTWEAVER_MOCK_AUTH__ = true;
-        }
-      })();
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
