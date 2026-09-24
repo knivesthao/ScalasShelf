@@ -1,7 +1,8 @@
 /**
  * Textweaver Demo Video — Automated Recording Script
  *
- * Records 4 clips of the MVP for the demo/pitch video, each as a .webm in ./recordings.
+ * Records 4 clips of the MVP for the demo/pitch video, each as a .webm in ./recordings,
+ * phone-sized (860×1864 portrait; see playwright.record.config.ts).
  *
  *   1. Read:     library → book → animated panels → tap a word → quiz
  *   2. Offline:  download a book → it's in My Library, readable without internet
@@ -28,6 +29,13 @@ async function scrollTo(page: Page, selector: string) {
   await page.locator(selector).scrollIntoViewIfNeeded();
   await page.waitForTimeout(PAUSE_SHORT);
 }
+
+// Phone layout, captured sharp: zoom 2× on an 860-wide screen = a 430-wide phone.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    document.addEventListener('DOMContentLoaded', () => { document.documentElement.style.zoom = '2'; });
+  });
+});
 
 test.describe('Textweaver Demo Video — Automated Recording', () => {
   test('clip-01-read', async ({ page }) => {

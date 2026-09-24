@@ -6,14 +6,17 @@ export default defineConfig({
   retries: 0,
   workers: 1, // Serial execution so we don't burn CPU
 
+  // Phone-sized, since the pitch is a phone app for students in Laos: a 430×932 phone
+  // layout recorded at 860×1864. Video capture ignores deviceScaleFactor, so the screen
+  // is 860×1864 and scripts/record-demo.spec.ts zooms the page 2× instead.
   use: {
     baseURL: 'http://localhost:5173',
     headless: true,
-    viewport: { width: 1920, height: 1080 },
-    deviceScaleFactor: 1,
+    viewport: { width: 860, height: 1864 },
+    hasTouch: true,
     video: {
       mode: 'on',
-      size: { width: 1920, height: 1080 },
+      size: { width: 860, height: 1864 },
     },
   },
 
