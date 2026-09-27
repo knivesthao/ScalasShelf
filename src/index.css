@@ -257,6 +257,15 @@ body {
   padding-top: 1rem;
 }
 
+.policy-page { padding-top: 1rem; line-height: 1.6; }
+.policy-page h2 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
+.policy-page ul { padding-left: 1.2rem; }
+.policy-page li { margin: 0.4rem 0; }
+.policy-page a { color: var(--accent, inherit); }
+
+.library-footer { margin: 2.5rem 0 1rem; text-align: center; font-size: 0.8rem; }
+.library-footer a { color: var(--text-muted); }
+
 .empty {
   text-align: center;
   padding: 3rem 1rem;

@@ -74,6 +74,10 @@ export function Library() {
           ))}
         </div>
       )}
+
+      <footer className="library-footer">
+        <Link to="/about/safeguarding">Child safeguarding</Link>
+      </footer>
     </div>
   );
 }

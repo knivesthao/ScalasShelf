@@ -5,6 +5,7 @@ import { Library } from './pages/Library';
 import { BookDetail } from './pages/BookDetail';
 import { Reader } from './pages/Reader';
 import { MyLibrary } from './pages/MyLibrary';
+import { Safeguarding } from './pages/Safeguarding';
 import { StudioDashboard, StudioEditor } from './pages/studio';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/my-library" element={<MyLibrary />} />
           <Route path="/studio" element={<StudioDashboard />} />
           <Route path="/studio/:type/:id" element={<StudioEditor />} />
+          <Route path="/about/safeguarding" element={<Safeguarding />} />
         </Routes>
       </div>
     </ErrorBoundary>
