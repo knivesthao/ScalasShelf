@@ -1,7 +1,8 @@
-// The three things the API needs from its host, as small interfaces:
+// The things the API needs from its host, as small interfaces:
 //   Db        — Cloudflare D1 in production, SQLite (better-sqlite3) locally
 //   FileStore — Cloudflare R2 in production, a folder locally
-//   Auth      — who is calling (the sign-in method is decided later; see docs/plans/backend-architecture.md)
+//   Auth      — who is calling: staff sign in by email link (services/staff.ts); readers never do
+//   Mailer    — Resend in production; prints to the terminal locally
 // Business logic only ever sees these, never Hono, D1 or R2 directly.
 
 /** The subset of D1's API we use. D1Database satisfies it structurally. */
@@ -33,24 +34,86 @@ export interface Auth {
   userId(request: Request): Promise<string | null>;
 }
 
+export interface Mail {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}
+
+export interface Mailer {
+  send(mail: Mail): Promise<void>;
+  /** A development mailer: the API may return sign-in links directly, since nothing is emailed. */
+  development?: boolean;
+}
+
 export interface Platform {
   db: Db;
   files: FileStore;
   auth: Auth;
+  mailer: Mailer;
+  /** Set the session cookie with `Secure` (true everywhere except plain-http local dev). */
+  secureCookies?: boolean;
   /** Shared secret the GPU worker uses to claim and finish jobs. */
   workerSecret?: string;
 }
 
-// ---- Auth placeholders until the sign-in method is chosen ----
+export const SESSION_COOKIE = 'tw_session';
 
-/** Local development only: every request is the demo creator (or the x-dev-user header). */
+/** Reads the value of one cookie from a request. */
+export function readCookie(request: Request, name: string): string | undefined {
+  const header = request.headers.get('cookie') ?? '';
+  for (const part of header.split(';')) {
+    const [k, ...v] = part.trim().split('=');
+    if (k === name) return decodeURIComponent(v.join('='));
+  }
+  return undefined;
+}
+
+/** Staff sessions: the session cookie maps to a staff email (services/staff.ts). */
+export function sessionAuth(lookup: (sessionId: string | undefined) => Promise<string | null>): Auth {
+  return { userId: (request) => lookup(readCookie(request, SESSION_COOKIE)) };
+}
+
+/** Local development: prints each email (sign-in links) to the terminal. */
+export const consoleMailer: Mailer = {
+  development: true,
+  async send(mail) {
+    console.log(`\n[dev email] to ${mail.to}: ${mail.subject}\n${mail.text}\n`);
+  },
+};
+
+/** Sends email through Resend's HTTP API (https://resend.com). */
+export function resendMailer(apiKey: string, from: string): Mailer {
+  return {
+    async send({ to, subject, text, html }) {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ from, to, subject, text, html }),
+      });
+      if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+    },
+  };
+}
+
+/** Until email is configured: sign-in requests fail with a clear message. */
+export const noMailer: Mailer = {
+  async send() {
+    throw new Error('Email is not set up yet (RESEND_API_KEY)');
+  },
+};
+
+// ---- Auth for tests ----
+
+/** Tests only: every request is the demo creator (or the x-dev-user header). */
 export const devAuth: Auth = {
   async userId(request) {
     return request.headers.get('x-dev-user') || 'demo-creator';
   },
 };
 
-/** Production until real sign-in exists: everyone is an anonymous reader. */
+/** Everyone is an anonymous reader. */
 export const noAuth: Auth = {
   async userId() {
     return null;

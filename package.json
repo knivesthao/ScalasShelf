@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:reader": "tsc -b && VITE_READER_ONLY=1 vite build --outDir dist-reader",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

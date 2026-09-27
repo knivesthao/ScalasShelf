@@ -14,6 +14,8 @@ interface MotionPanelProps {
   layers: PanelLayer[];
   bubbles: PanelBubble[];
   assets: Record<string, AssetRef>;
+  /** Words printed on the screen that nobody in the scene says. */
+  caption?: string;
   /** No animation: reduced motion, data saver or a very old phone. */
   still?: boolean;
   /** Change to replay the entrance animations. */
@@ -55,7 +57,7 @@ const pct = (n: number) => `${n * 100}%`;
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
 export function MotionPanel({
-  aspect, layers, bubbles, assets, still, playKey = 0,
+  aspect, layers, bubbles, assets, caption, still, playKey = 0,
   editable, selectedId, onSelect, onMove, onWordTap,
 }: MotionPanelProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -158,6 +160,8 @@ export function MotionPanel({
           </div>
         );
       })}
+
+      {caption?.trim() && <div className="mp-caption" lang="en">{caption.trim()}</div>}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listBooks, type BookCard } from '@/lib/books';
 import { LEVELS, type Level } from '@/lib/format';
+import { READER_ONLY } from '@/lib/features';
 
 export function Library() {
   const [books, setBooks] = useState<BookCard[]>([]);
@@ -27,7 +28,7 @@ export function Library() {
         <h1>Textweaver</h1>
         <nav className="header-nav">
           <Link to="/my-library">My Library</Link>
-          <Link to="/studio">Studio</Link>
+          {!READER_ONLY && <Link to="/studio">Studio</Link>}
         </nav>
       </header>
 

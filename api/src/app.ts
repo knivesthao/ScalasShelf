@@ -1,11 +1,15 @@
 import { Hono, type Context } from 'hono';
 import { BadRequest, Forbidden, NotFound, Unauthorized } from './errors';
-import type { Platform } from './platform';
+import { SESSION_COOKIE, readCookie, type Platform } from './platform';
 import { getBook, listBooks } from './services/books';
 import { claimNextJob, finishJob, getJob, queueJob } from './services/jobs';
 import {
-  addScene, assertOwnsProject, createProject, deleteScene, getProject, listProjects,
-  publishProject, saveProject, unpublishProject, type SaveInput,
+  endSession, getStaff, listStaff, redeemSignInLink, removeStaff, requestSignInLink, requireRole,
+  upsertStaff, SESSION_TTL_MS,
+} from './services/staff';
+import {
+  addScene, approveProject, assertOwnsProject, createProject, deleteScene, getProject, getReviewItem,
+  listProjects, listReviewQueue, requestChanges, saveProject, submitForReview, unpublishProject, type SaveInput,
 } from './services/studio';
 import type { Package } from '../../src/lib/format';
 
@@ -30,8 +34,27 @@ function requireUser(c: Context<Env>): string {
   return id;
 }
 
+/** Same-origin check for state-changing auth requests (defence against cross-site form posts). */
+function assertSameOrigin(c: Context): void {
+  const origin = c.req.header('origin');
+  if (origin && origin !== new URL(c.req.url).origin) throw new Forbidden('Cross-site request refused');
+}
+
+function sessionCookie(value: string, maxAgeSeconds: number, secure: boolean): string {
+  return [`${SESSION_COOKIE}=${encodeURIComponent(value)}`, 'Path=/', 'HttpOnly', 'SameSite=Lax', `Max-Age=${maxAgeSeconds}`, secure ? 'Secure' : '']
+    .filter(Boolean).join('; ');
+}
+
 export function createApp(platform: Platform) {
-  const { db, files, auth } = platform;
+  const { db, files, auth, mailer } = platform;
+  const secure = platform.secureCookies ?? true;
+
+  /** Any staff member (creators, reviewers, admins) may use the Studio. */
+  const requireStaff = async (c: Context<Env>) => {
+    const userId = requireUser(c);
+    await requireRole(db, userId, ['creator', 'reviewer']);
+    return userId;
+  };
   const app = new Hono<Env>().basePath('/api');
 
   app.onError((err, c) => {
@@ -55,24 +78,99 @@ export function createApp(platform: Platform) {
   app.get('/books', async (c) => c.json(await listBooks(db, { level: c.req.query('level') })));
   app.get('/books/:id', async (c) => c.json(await getBook(db, c.req.param('id'))));
 
-  // ---- Studio ----
+  // ---- Staff sign-in (readers never sign in) ----
 
-  app.get('/studio/projects', async (c) => c.json(await listProjects(db, requireUser(c))));
-  app.post('/studio/projects', async (c) => c.json(await createProject(db, requireUser(c), await body(c)), 201));
-  app.get('/studio/projects/:id', async (c) => c.json(await getProject(db, requireUser(c), c.req.param('id'))));
+  app.get('/auth/me', async (c) => {
+    const userId = c.get('userId');
+    return c.json({ user: userId ? await getStaff(db, userId) : null });
+  });
+  app.post('/auth/request', async (c) => {
+    assertSameOrigin(c);
+    const { email, next } = await body<{ email?: unknown; next?: unknown }>(c);
+    const result = await requestSignInLink(db, mailer, email, new URL(c.req.url).origin, next);
+    return c.json({ ok: true, ...result });
+  });
+  app.post('/auth/verify', async (c) => {
+    assertSameOrigin(c);
+    const { token } = await body<{ token?: unknown }>(c);
+    const { sessionId, member } = await redeemSignInLink(db, token);
+    c.header('set-cookie', sessionCookie(sessionId, SESSION_TTL_MS / 1000, secure));
+    c.header('cache-control', 'no-store');
+    return c.json({ user: member });
+  });
+  app.post('/auth/sign-out', async (c) => {
+    assertSameOrigin(c);
+    await endSession(db, readCookie(c.req.raw, SESSION_COOKIE));
+    c.header('set-cookie', sessionCookie('', 0, secure));
+    return c.json({ ok: true });
+  });
+
+  // ---- Studio (staff) ----
+
+  app.get('/studio/projects', async (c) => c.json(await listProjects(db, await requireStaff(c))));
+  app.post('/studio/projects', async (c) => c.json(await createProject(db, await requireStaff(c), await body(c)), 201));
+  app.get('/studio/projects/:id', async (c) => c.json(await getProject(db, await requireStaff(c), c.req.param('id'))));
   app.put('/studio/projects/:id', async (c) => {
-    await saveProject(db, requireUser(c), c.req.param('id'), await body<SaveInput>(c));
+    await saveProject(db, await requireStaff(c), c.req.param('id'), await body<SaveInput>(c));
     return c.json({ ok: true });
   });
-  app.post('/studio/projects/:id/scenes', async (c) => c.json(await addScene(db, requireUser(c), c.req.param('id')), 201));
+  app.post('/studio/projects/:id/scenes', async (c) => c.json(await addScene(db, await requireStaff(c), c.req.param('id')), 201));
   app.delete('/studio/scenes/:id', async (c) => {
-    await deleteScene(db, requireUser(c), c.req.param('id'));
+    await deleteScene(db, await requireStaff(c), c.req.param('id'));
     return c.json({ ok: true });
   });
-  app.post('/studio/projects/:id/publish', async (c) =>
-    c.json(await publishProject(db, requireUser(c), c.req.param('id'), await body<Package>(c))));
-  app.post('/studio/projects/:id/unpublish', async (c) =>
-    c.json(await unpublishProject(db, requireUser(c), c.req.param('id'))));
+  // Creators submit; only reviewers publish (every book is checked by an adult first).
+  app.post('/studio/projects/:id/submit', async (c) =>
+    c.json(await submitForReview(db, await requireStaff(c), c.req.param('id'), await body<Package>(c))));
+  app.post('/studio/projects/:id/unpublish', async (c) => {
+    const userId = await requireStaff(c);
+    const member = await getStaff(db, userId);
+    const isReviewer = member?.role === 'reviewer' || member?.role === 'admin';
+    return c.json(await unpublishProject(db, c.req.param('id'), { userId, isReviewer }));
+  });
+
+  // ---- Review (reviewers and admins) ----
+
+  const requireReviewer = async (c: Context<Env>) => {
+    const userId = requireUser(c);
+    await requireRole(db, userId, ['reviewer']);
+    return userId;
+  };
+  app.get('/review/queue', async (c) => {
+    await requireReviewer(c);
+    return c.json(await listReviewQueue(db));
+  });
+  app.get('/review/projects/:id', async (c) => {
+    await requireReviewer(c);
+    return c.json(await getReviewItem(db, c.req.param('id')));
+  });
+  app.post('/review/projects/:id/approve', async (c) =>
+    c.json(await approveProject(db, await requireReviewer(c), c.req.param('id'))));
+  app.post('/review/projects/:id/request-changes', async (c) => {
+    const reviewerId = await requireReviewer(c);
+    const { note } = await body<{ note?: unknown }>(c);
+    return c.json(await requestChanges(db, reviewerId, c.req.param('id'), note));
+  });
+
+  // ---- Staff list (admins) ----
+
+  const requireAdmin = async (c: Context<Env>) => {
+    const userId = requireUser(c);
+    await requireRole(db, userId, []);
+    return userId;
+  };
+  app.get('/admin/staff', async (c) => {
+    await requireAdmin(c);
+    return c.json(await listStaff(db));
+  });
+  app.post('/admin/staff', async (c) => {
+    await requireAdmin(c);
+    return c.json(await upsertStaff(db, await body(c)), 201);
+  });
+  app.delete('/admin/staff/:email', async (c) => {
+    await removeStaff(db, await requireAdmin(c), decodeURIComponent(c.req.param('email')));
+    return c.json({ ok: true });
+  });
 
   // Voice recordings: raw audio body, stored under audio/<project>/…
   app.post('/studio/projects/:id/audio', async (c) => {

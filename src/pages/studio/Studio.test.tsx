@@ -5,8 +5,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { StudioDashboard, StudioEditor } from './index';
 import { deviceStore } from '@/lib/studioStore';
 
-// The Studio as it ships today (FEATURES off): writing only, saved on this device,
+// The Studio with the cloud Studio switched off: writing only, saved on this device,
 // never touching the server.
+vi.mock('@/lib/features', () => ({ FEATURES: { rendering: false, cloudStudio: false }, READER_ONLY: false }));
 
 async function clearDevice() {
   const db = await new Promise<IDBDatabase>((resolve) => {
@@ -62,13 +63,13 @@ describe('Studio (writing only, on this device)', () => {
     await waitFor(async () => expect((await deviceStore.list()).map((p) => p.title)).toContain('Market Day'));
   });
 
-  it('has no art, panel or audio tools', async () => {
+  it('has no panel or audio tools, and says illustrations aren’t on yet', async () => {
     await deviceStoreReady();
     renderAt('/studio/comic/draft-noy');
     expect(await screen.findByDisplayValue(FIRST_LINE)).toBeDefined();
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Script', 'Words', 'Quiz', 'Publish']);
-    expect(screen.queryByText(/Generate scene art/)).toBeNull();
-    expect(screen.getByText(/Illustrations will be made from this/)).toBeDefined();
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Cast', 'Script', 'Quiz', 'Publish']);
+    fireEvent.click(screen.getByText('Generate scene'));
+    expect(screen.getByText(/Illustrations aren’t switched on yet/)).toBeDefined();
   });
 
   it('autosaves writing to the device', async () => {
@@ -92,9 +93,9 @@ describe('Studio (writing only, on this device)', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Publish' }));
     expect(screen.queryByText(/No art yet/)).toBeNull();
     expect(screen.queryByText(/has no audio/)).toBeNull();
-    expect(screen.getByText(/vocab words marked/)).toBeDefined();
-    expect(screen.getByText(/Publishing to the library opens once accounts are ready/)).toBeDefined();
-    expect(screen.queryByText('Publish episode')).toBeNull();
+    expect(screen.queryByText(/vocab/)).toBeNull();
+    expect(screen.getByText(/Sign in to send books for review\. Your draft is saved on this device\./)).toBeDefined();
+    expect(screen.queryByText('Send for review')).toBeNull();
   });
 });
 

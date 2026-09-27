@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { studioStore } from '@/lib/studioStore';
-import { emptyScene, type Level, type Package, type QuizItem, type SceneDraft } from '@/lib/format';
+import { studioStore, type ReviewStatus } from '@/lib/studioStore';
+import { adoptCast } from '@/lib/cast';
+import { emptyCast, emptyScene, type Cast, type Level, type Package, type QuizItem, type SceneDraft } from '@/lib/format';
 
-// Loads a Studio project and its scenes, and autosaves edits. Storage is this device
-// for now, the API once sign-in exists (src/lib/studioStore.ts). Everything pending is
+// Loads a Studio project and its scenes, and autosaves edits. Storage is the API for
+// signed-in staff, or this device when the cloud Studio is off (src/lib/studioStore.ts). Everything pending is
 // saved in one call, and failed saves stay pending until the next attempt.
 
 export interface StudioProject {
@@ -14,7 +15,10 @@ export interface StudioProject {
   description: string;
   level: Level;
   status: 'draft' | 'published';
+  review_status: ReviewStatus;
+  review_note: string;
   quiz: QuizItem[];
+  cast: Cast;
   manifest: Package | null;
 }
 
@@ -26,7 +30,7 @@ export interface StudioScene {
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-type EditableFields = Partial<Pick<StudioProject, 'title' | 'description' | 'level' | 'quiz'>>;
+type EditableFields = Partial<Pick<StudioProject, 'title' | 'description' | 'level' | 'quiz' | 'cast'>>;
 
 interface SceneDto {
   id: string;
@@ -60,17 +64,6 @@ export function useStudioProject(id: string | undefined) {
     setProject(p);
   };
 
-  useEffect(() => {
-    if (!id) return;
-    studioStore.get(id)
-      .then(({ project: p, scenes: s }) => {
-        setCurrentProject(p);
-        setAllScenes(s.map(toScene));
-      })
-      .catch((e: Error) => setLoadError(e.message))
-      .finally(() => setLoading(false));
-  }, [id]);
-
   const flush = useCallback(async () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
@@ -100,6 +93,29 @@ export function useStudioProject(id: string | undefined) {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => { void flush(); }, SAVE_DELAY_MS);
   }, [flush]);
+
+  useEffect(() => {
+    if (!id) return;
+    studioStore.get(id)
+      .then(({ project: p, scenes: s }) => {
+        const loaded = s.map(toScene);
+        const cast = p.cast ?? emptyCast();
+        // Older drafts: turn typed scene descriptions and speaker names into the cast.
+        const adopted = adoptCast(cast, loaded.map((x) => x.draft));
+        if (adopted) {
+          setCurrentProject({ ...p, cast: adopted.cast });
+          setAllScenes(loaded.map((x, i) => ({ ...x, draft: adopted.scenes[i] })));
+          dirtyProject.current.cast = adopted.cast;
+          loaded.forEach((x) => dirtyScenes.current.add(x.id));
+          schedule();
+        } else {
+          setCurrentProject({ ...p, cast });
+          setAllScenes(loaded);
+        }
+      })
+      .catch((e: Error) => setLoadError(e.message))
+      .finally(() => setLoading(false));
+  }, [id, schedule]);
 
   // Save anything pending when leaving the editor.
   useEffect(() => () => { void flush(); }, [flush]);
@@ -132,11 +148,11 @@ export function useStudioProject(id: string | undefined) {
     setAllScenes(scenesRef.current.filter((s) => s.id !== sceneId).map((s, i) => ({ ...s, scene_number: i + 1 })));
   }, [id, flush]);
 
-  /** Saves pending edits, then publishes. The server validates the package and queues the packager. */
-  const publish = useCallback(async (pkg: Package) => {
+  /** Saves pending edits, then sends the book for review. The server validates the package. */
+  const submit = useCallback(async (pkg: Package) => {
     await flush();
     if (!projectRef.current) return;
-    setCurrentProject(await studioStore.publish(projectRef.current.id, pkg));
+    setCurrentProject(await studioStore.submit(projectRef.current.id, pkg));
   }, [flush]);
 
   const unpublish = useCallback(async () => {
@@ -146,6 +162,6 @@ export function useStudioProject(id: string | undefined) {
 
   return {
     project, scenes, loading, loadError, saveState,
-    updateProject, updateScene, addScene, deleteScene, publish, unpublish, flush,
+    updateProject, updateScene, addScene, deleteScene, submit, unpublish, flush,
   };
 }

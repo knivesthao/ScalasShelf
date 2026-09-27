@@ -6,7 +6,8 @@ import { getRequestListener } from '@hono/node-server';
 import { join } from 'node:path';
 import { createApp } from './app';
 import { folderStore, migrate, sqliteDb } from './local';
-import { devAuth } from './platform';
+import { consoleMailer, sessionAuth } from './platform';
+import { sessionEmail } from './services/staff';
 import { seedDemo } from './seed';
 
 const DATA_DIR = join(process.cwd(), '.data');
@@ -19,7 +20,10 @@ const ready = seedDemo(db).then((seeded) => { if (seeded) console.log('[api] see
 const app = createApp({
   db,
   files: folderStore(join(DATA_DIR, 'files')),
-  auth: devAuth,
+  // Real staff sign-in; links print to the terminal (and the sign-in page shows them).
+  auth: sessionAuth((sessionId) => sessionEmail(db, sessionId)),
+  mailer: consoleMailer,
+  secureCookies: false,
   workerSecret: process.env.WORKER_SECRET ?? 'dev-worker-secret',
 });
 

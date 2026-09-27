@@ -58,6 +58,7 @@ export function PanelTab({ draft, generating, busyLayerId, onChange, onReroll }:
           layers={draft.layers}
           bubbles={draft.bubbles}
           assets={draft.assets}
+          caption={draft.caption}
           editable
           still={still}
           playKey={playKey}
@@ -66,7 +67,7 @@ export function PanelTab({ draft, generating, busyLayerId, onChange, onReroll }:
           onMove={move}
         />
         {draft.layers.length === 0 && !generating && (
-          <p className="hint">No art yet. Describe the scene in the Script tab and generate it.</p>
+          <p className="hint">No art yet. Choose a place in the Script tab and generate the scene.</p>
         )}
       </div>
 

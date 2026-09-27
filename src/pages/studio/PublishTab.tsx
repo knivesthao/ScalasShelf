@@ -8,14 +8,14 @@ interface PublishTabProps {
   project: StudioProject;
   scenes: StudioScene[];
   onUpdate: (fields: Partial<Pick<StudioProject, 'title' | 'description' | 'level'>>) => void;
-  onPublish: (pkg: Package) => Promise<void>;
+  onSubmit: (pkg: Package) => Promise<void>;
   onUnpublish: () => Promise<void>;
   onJumpToScene: (index: number) => void;
 }
 
-export function PublishTab({ project, scenes, onUpdate, onPublish, onUnpublish, onJumpToScene }: PublishTabProps) {
+export function PublishTab({ project, scenes, onUpdate, onSubmit, onUnpublish, onJumpToScene }: PublishTabProps) {
   const [problems, setProblems] = useState<string[]>([]);
-  const [publishing, setPublishing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const settings = { id: project.id, title: project.title, level: project.level };
   const drafts = scenes.map((s) => s.draft);
@@ -30,20 +30,26 @@ export function PublishTab({ project, scenes, onUpdate, onPublish, onUnpublish, 
   const errors = issues.filter((i) => i.level === 'error');
   const warnings = issues.filter((i) => i.level === 'warning');
 
-  async function publish() {
-    setPublishing(true);
+  async function submit() {
+    setSubmitting(true);
     const pkg = buildPackage(settings, drafts, project.quiz);
     const found = validatePackage(pkg);
     setProblems(found);
     if (found.length === 0) {
       try {
-        await onPublish(pkg);
+        await onSubmit(pkg);
       } catch (e) {
         setProblems([(e as Error).message]);
       }
     }
-    setPublishing(false);
+    setSubmitting(false);
   }
+
+  const submitButton = (label: string) => (
+    <button className="buy-btn" onClick={submit} disabled={errors.length > 0 || submitting}>
+      {submitting ? 'Sending…' : label}
+    </button>
+  );
 
   return (
     <div className="publish-tab">
@@ -80,27 +86,48 @@ export function PublishTab({ project, scenes, onUpdate, onPublish, onUnpublish, 
             </li>
           ))}
         </ul>
-        {errors.length > 0 && <p className="hint">Fix the ✕ items before publishing. The ! items are recommendations.</p>}
+        {errors.length > 0 && <p className="hint">Fix the ✕ items before sending for review. The ! items are recommendations.</p>}
       </section>
 
       <section className="studio-section">
         {!FEATURES.cloudStudio ? (
           <p className="studio-note">
-            Publishing to the library opens once accounts are ready. Your draft is saved on this device.
+            Sign in to send books for review. Your draft is saved on this device.
           </p>
-        ) : project.status === 'published' ? (
+        ) : project.review_status === 'in_review' ? (
+          <p className="studio-note">
+            Waiting for review. A reviewer checks every book before children can read it.
+            You can keep editing; send it again to replace the version under review.
+          </p>
+        ) : null}
+        {FEATURES.cloudStudio && project.review_status === 'changes_requested' && (
+          <div className="review-note" role="status">
+            <strong>A reviewer asked for changes:</strong>
+            <p>{project.review_note}</p>
+          </div>
+        )}
+        {FEATURES.cloudStudio && project.status === 'published' && project.review_status === 'none' && (
           <>
             <p className="check-ok">
               ✓ Published. The cloud packager builds the final images and audio for the Lite edition. Free for every reader.
             </p>
-            <button className="ghost-btn" onClick={() => onUnpublish().catch((e: Error) => setProblems([e.message]))}>
-              Back to draft
-            </button>
+            <p className="hint">Changes you make now reach readers after a reviewer approves them again.</p>
           </>
-        ) : (
-          <button className="buy-btn" onClick={publish} disabled={errors.length > 0 || publishing}>
-            {publishing ? 'Publishing…' : 'Publish episode'}
-          </button>
+        )}
+        {FEATURES.cloudStudio && (
+          <div className="new-project-actions">
+            {submitButton(
+              project.review_status === 'in_review' ? 'Send updated version'
+                : project.review_status === 'changes_requested' ? 'Send for review again'
+                : project.status === 'published' ? 'Send changes for review'
+                : 'Send for review',
+            )}
+            {project.status === 'published' && (
+              <button className="ghost-btn" onClick={() => onUnpublish().catch((e: Error) => setProblems([e.message]))}>
+                Take out of the library
+              </button>
+            )}
+          </div>
         )}
         {problems.length > 0 && (
           <ul className="checklist">

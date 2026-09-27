@@ -84,7 +84,10 @@ export type BubbleStyle = 'speech' | 'thought' | 'narration';
 
 export interface Bubble {
   id: string;
+  /** The character's name as readers see it (kept in step with the cast). */
   speaker: string;
+  /** Which cast character says this line (none for narration). */
+  characterId?: string;
   style: BubbleStyle;
   x: number;
   y: number;
@@ -99,7 +102,12 @@ export interface Bubble {
 export type Aspect = '9:16' | '4:5' | '1:1';
 
 export interface SceneDraft {
+  /** What the scene looks like: the illustration is made from this. */
   description: string;
+  /** Words printed on the screen that nobody in the scene says (narration, a sign, a title). */
+  caption?: string;
+  /** The cast place this scene happens in; its picture becomes the background. */
+  placeId?: string;
   aspect: Aspect;
   layers: Layer[];
   bubbles: Bubble[];
@@ -107,7 +115,7 @@ export interface SceneDraft {
 }
 
 export function emptyScene(description = ''): SceneDraft {
-  return { description, aspect: '9:16', layers: [], bubbles: [], assets: {} };
+  return { description, caption: '', aspect: '9:16', layers: [], bubbles: [], assets: {} };
 }
 
 export function newId(prefix: string): string {
@@ -132,6 +140,24 @@ export function newBubble(index: number, speaker = ''): Bubble {
     audio: {},
   };
 }
+
+// ---- Cast: the episode's characters and places ----
+
+/** A character or place, drawn once and reused in every scene so it looks the same throughout. */
+export interface CastMember {
+  id: string;
+  name: string;
+  /** What they (or it) look like: the picture is made from this. */
+  description: string;
+  asset?: AssetRef;
+}
+
+export interface Cast {
+  characters: CastMember[];
+  places: CastMember[];
+}
+
+export const emptyCast = (): Cast => ({ characters: [], places: [] });
 
 // ---- Learning content ----
 
@@ -325,8 +351,13 @@ export function publishChecklist(
     if (art && !scene.layers.some((l) => scene.assets[l.asset])) {
       issues.push({ level: 'error', scene: n, message: 'No art yet: generate the scene.' });
     }
-    if (scene.bubbles.length === 0) {
+    const caption = scene.caption?.trim() ?? '';
+    if (scene.bubbles.length === 0 && !caption) {
       issues.push({ level: 'warning', scene: n, message: 'No dialogue or narration.' });
+    }
+    const hardInCaption = caption ? aboveLevel(caption) : [];
+    if (hardInCaption.length) {
+      issues.push({ level: 'warning', scene: n, message: `Text on screen has words above ${settings.level}: ${hardInCaption.join(', ')}` });
     }
     scene.bubbles.forEach((b, j) => {
       const line = `Line ${j + 1}`;
@@ -342,10 +373,6 @@ export function publishChecklist(
     });
   });
 
-  const vocabCount = buildVocab(scenes).length;
-  if (vocabCount < 3) {
-    issues.push({ level: 'warning', message: `Only ${vocabCount} vocab words marked (aim for 5–10).` });
-  }
   if (quiz.length < 3) {
     issues.push({ level: 'warning', message: `Quiz has ${quiz.length} questions (aim for 3–5).` });
   }
@@ -384,6 +411,8 @@ export interface PublishedScene {
 
 export interface EpisodeText {
   bubbles: Record<string, Pick<Bubble, 'text' | 'tokens' | 'audio'>>;
+  /** Scene number → the words printed on screen for that scene (SceneDraft.caption). */
+  captions?: Record<string, Record<Lang, string>>;
   vocab: VocabEntry[];
   quiz: QuizItem[];
 }
@@ -426,6 +455,7 @@ export function buildPackage(settings: EpisodeSettings, scenes: SceneDraft[], qu
       const tokens = tokensMatch(b.tokens.en, b.text.en) ? b.tokens : { en: tokenize(b.text.en) };
       text.bubbles[b.id] = { text: b.text, tokens, audio: b.audio };
     }
+    if (scene.caption?.trim()) (text.captions ??= {})[String(i + 1)] = { en: scene.caption.trim() };
     return {
       n: i + 1,
       aspect: scene.aspect,

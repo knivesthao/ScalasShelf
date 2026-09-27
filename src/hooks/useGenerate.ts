@@ -1,27 +1,26 @@
 import { useCallback } from 'react';
 import { api } from '@/lib/api';
+import type { CastKind } from '@/lib/cast';
 import { newId, type AssetRef, type Layer } from '@/lib/format';
 import { loadDemoPack, packBackground, packCharacter, stubBackground, stubCharacter, stubSceneArt } from '@/lib/stubArt';
 
 export { stubSceneArt };
 
-// Scene art is made in the cloud, never on the creator's phone (docs/plans/MVP.md →
-// "What runs where"). The Studio queues a job through the API, the GPU worker
-// claims it, and we poll until the low-res preview layers are ready.
+// Art is made in the cloud, never on the creator's phone (docs/plans/MVP.md →
+// "What runs where"). Characters and places are drawn once in the Cast tab and reused in
+// every scene; a scene is then laid out from them (lib/cast.ts → composeScene) with no
+// image model at all. Each drawing is a cloud job: the Studio queues it through the API,
+// the GPU worker claims it, and we poll until it's ready.
 // Dev/demo mode swaps in the demo art pack (public/demo-art) after a short delay,
-// falling back to placeholder SVG shapes for scenes and speakers it doesn't cover.
+// falling back to placeholder SVG shapes for anything it doesn't cover.
 
-export interface SceneArtRequest {
+export interface CastArtRequest {
   projectId: string;
-  sceneId: string;
+  kind: CastKind;
+  name: string;
   description: string;
-  /** Speakers in the scene, in order of first line. One character layer each. */
-  characters: string[];
-}
-
-export interface SceneArt {
-  layers: Layer[];
-  assets: Record<string, AssetRef>;
+  /** Asks for a different picture than this one (regenerate). */
+  previous?: AssetRef;
 }
 
 export interface LayerArtRequest {
@@ -31,22 +30,27 @@ export interface LayerArtRequest {
   layer: Layer;
 }
 
-type JobKind = 'scene' | 'layer';
+type JobKind = 'layer';
 
 const STUB_DELAY_MS = 1500;
 
 export function useGenerate() {
-  const generateScene = useCallback(async (req: SceneArtRequest): Promise<SceneArt> => {
+  /** Draws one character (standing, plain background) or one place (no people). */
+  const generateArt = useCallback(async (req: CastArtRequest): Promise<AssetRef> => {
     if (import.meta.env.DEV) {
       const [pack] = await Promise.all([loadDemoPack(), new Promise((r) => setTimeout(r, STUB_DELAY_MS))]);
-      return stubSceneArt(req, pack);
+      const hit = pack && (req.kind === 'place' ? packBackground(pack, req.description) : packCharacter(pack, req.name));
+      if (hit && hit.asset.url !== req.previous?.url) return hit.asset;
+      const seed = Math.floor(Math.random() * 1000) + 1;
+      return req.kind === 'place' ? stubBackground(req.description, seed) : stubCharacter(req.name, seed);
     }
-    return runJob<SceneArt>('scene', {
+    // A single-image job, the same kind the Panel tab uses to re-roll one layer.
+    const { asset } = await runJob<{ asset: AssetRef }>('layer', {
       project_id: req.projectId,
-      scene_id: req.sceneId,
       description: req.description,
-      characters: req.characters,
+      layer: { role: req.kind === 'place' ? 'background' : 'character', prompt: `${req.name}: ${req.description}` },
     });
+    return asset;
   }, []);
 
   /** Re-generate one layer with a new seed; returns the new asset to swap in. */
@@ -69,7 +73,7 @@ export function useGenerate() {
     });
   }, []);
 
-  return { generateScene, rerollLayer };
+  return { generateArt, rerollLayer };
 }
 
 async function runJob<T>(kind: JobKind, payload: Record<string, unknown>, maxAttempts = 100, intervalMs = 3000): Promise<T> {

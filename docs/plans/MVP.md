@@ -321,7 +321,7 @@ This is what turns a comic reader into a learning tool. MVP features:
 |---|---|
 | `src/lib/idb.ts` | Store **Blobs per asset** + chunk JSON (not HTML strings). Dedupe assets across scenes and series. Request persistent storage |
 | `src/pages/Reader.tsx` | Replace the `iframe srcDoc` scene with a `<MotionPanel>` renderer: layers + bubbles + presets, vertical scroll. Primary/gloss language, tap-a-word, bubble audio, end-of-episode quiz |
-| `src/pages/studio/` | ✅ **Done (2026-09-24).** Script (lines + level checker + cloud art generation), Panel (drag layers/bubbles, size, motion presets, re-roll), Audio (record per line), Words (meanings, starred vocab, join/split), Quiz (auto-draft + edit), Publish (checklist → manifest v2). English only, no pricing |
+| `src/pages/studio/` | ✅ **Done (2026-09-24; Words tab removed 2026-09-27: a reading book, not a dictionary).** Script (lines + level checker + cloud art generation), Panel (drag layers/bubbles, size, motion presets, re-roll), Audio (record per line), Quiz (write + edit), Publish (checklist → manifest v2). English only, no pricing |
 | New: `src/pages/MyWords.tsx` | Offline word bank + spaced-repetition review |
 | `src/hooks/useGenerate.ts` | Return scene JSON + layer URLs instead of a single result URL |
 | `gpu/package_content.py` | Emit manifest v2: asset dedupe, chunking, bilingual text, tokens, Opus audio per language, vocab + quiz files |

@@ -2,9 +2,11 @@
 // (see api/wrangler.toml). Bindings: DB (D1), FILES (R2, optional until R2 is
 // enabled on the account); secret WORKER_SECRET. The same Worker serves the built
 // app (dist/) as static assets, so the site and /api share one origin.
+// Staff sign-in emails go through Resend: secret RESEND_API_KEY, optional var EMAIL_FROM.
 
 import { createApp } from './app';
-import { noAuth, type Db, type FileStore } from './platform';
+import { noMailer, resendMailer, sessionAuth, type Db, type FileStore } from './platform';
+import { sessionEmail } from './services/staff';
 
 /** The bits of R2's bucket API we use (R2Bucket satisfies this). */
 interface R2Like {
@@ -17,6 +19,8 @@ interface Bindings {
   DB: Db;
   FILES?: R2Like;
   WORKER_SECRET?: string;
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
 }
 
 /** Until R2 is enabled: uploads fail with a clear message, everything else works. */
@@ -43,7 +47,10 @@ export default {
     const app = createApp({
       db: env.DB,
       files: env.FILES ? r2Store(env.FILES) : noFiles,
-      auth: noAuth, // Replace with the real sign-in once it's chosen.
+      auth: sessionAuth((sessionId) => sessionEmail(env.DB, sessionId)),
+      mailer: env.RESEND_API_KEY
+        ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM ?? 'Textweaver <noreply@admais.xyz>')
+        : noMailer,
       workerSecret: env.WORKER_SECRET,
     });
     return app.fetch(request, env, ctx as never);

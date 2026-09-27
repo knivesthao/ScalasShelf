@@ -42,7 +42,8 @@ describe('studio projects', () => {
     const { call } = await testApi();
     const mine = await call('GET', '/studio/projects');
     expect(mine.json.map((p: { title: string }) => p.title)).toEqual(['Noy and the Buffalo', 'Morning Market']);
-    expect((await call('GET', '/studio/projects', { user: 'someone-else' })).json).toEqual([]);
+    expect((await call('GET', '/studio/projects', { user: 'writer@example.org' })).json).toEqual([]);
+    expect((await call('GET', '/studio/projects', { user: 'not-staff' })).status).toBe(403);
   });
 
   it('creates a project with a first empty scene, and no price', async () => {
@@ -61,6 +62,19 @@ describe('studio projects', () => {
     expect((await call('POST', '/studio/projects', { body: { title: '' } })).status).toBe(400);
     expect((await call('PUT', '/studio/projects/demo-noy', { body: { project: { level: 'C9' } } })).status).toBe(400);
     expect((await call('PUT', '/studio/projects/demo-noy', { body: { scenes: [{ id: 'demo-noy-s1', data: { nope: 1 } }] } })).status).toBe(400);
+    expect((await call('PUT', '/studio/projects/demo-noy', { body: { project: { cast: { characters: [{ name: 'x' }], places: [] } } } })).status).toBe(400);
+    expect((await call('PUT', '/studio/projects/demo-noy', { body: { project: { cast: [] } } })).status).toBe(400);
+  });
+
+  it('saves the cast (characters and places), starting empty', async () => {
+    const { call } = await testApi();
+    expect((await call('GET', '/studio/projects/demo-noy')).json.project.cast).toEqual({ characters: [], places: [] });
+    const cast = {
+      characters: [{ id: 'c1', name: 'Noy', description: 'a girl in a blue shirt', asset: { url: 'noy.webp' } }],
+      places: [{ id: 'p1', name: 'The market', description: 'stalls and umbrellas' }],
+    };
+    expect((await call('PUT', '/studio/projects/demo-noy', { body: { project: { cast } } })).status).toBe(200);
+    expect((await call('GET', '/studio/projects/demo-noy')).json.project.cast).toEqual(cast);
   });
 
   it('keeps other people out of a project', async () => {
@@ -92,46 +106,161 @@ describe('studio projects', () => {
   });
 });
 
-describe('publishing', () => {
-  async function publishable() {
+describe('review before publishing', () => {
+  async function submittable() {
     const api = await testApi();
+    api.raw.prepare(`DELETE FROM books WHERE project_id = 'demo-noy'`).run();
+    api.raw.prepare(`UPDATE projects SET status = 'draft' WHERE id = 'demo-noy'`).run();
     const { project, scenes } = (await api.call('GET', '/studio/projects/demo-noy')).json;
     const drafts = scenes.map((s: { data: SceneDraft }) => withArt(s.data));
     const pkg = buildPackage({ id: project.id, title: project.title, level: project.level }, drafts, []);
-    return { ...api, pkg };
+    const titles = async () => (await api.call('GET', '/books', { user: '' })).json.map((b: { title: string }) => b.title).sort();
+    return { ...api, pkg, titles };
   }
 
-  it('puts the episode in the public library and queues the packager', async () => {
-    const { call, raw, pkg } = await publishable();
-    const res = await call('POST', '/studio/projects/demo-noy/publish', { body: pkg });
+  it('creators can no longer publish directly', async () => {
+    const { call, pkg } = await submittable();
+    expect((await call('POST', '/studio/projects/demo-noy/publish', { body: pkg })).status).toBe(404);
+  });
+
+  it('submitting puts the book in the review queue, not the library', async () => {
+    const { call, pkg, titles } = await submittable();
+    const res = await call('POST', '/studio/projects/demo-noy/submit', { body: pkg });
     expect(res.status).toBe(200);
-    expect(res.json.status).toBe('published');
+    expect(res.json).toMatchObject({ status: 'draft', review_status: 'in_review' });
+    expect(res.json.pending_package).toBeUndefined();
+    expect(await titles()).toEqual(['Morning Market']);
+
+    const queue = (await call('GET', '/review/queue', { user: 'demo-reviewer' })).json;
+    expect(queue.map((p: { id: string }) => p.id)).toEqual(['demo-noy']);
+    const item = (await call('GET', '/review/projects/demo-noy', { user: 'demo-reviewer' })).json;
+    expect(item.package.manifest.id).toBe('demo-noy');
+  });
+
+  it('approving publishes the exact submitted book and records the reviewer', async () => {
+    const { call, raw, pkg, titles } = await submittable();
+    await call('POST', '/studio/projects/demo-noy/submit', { body: pkg });
+    const res = await call('POST', '/review/projects/demo-noy/approve', { user: 'demo-reviewer' });
+    expect(res.status).toBe(200);
+    expect(res.json).toMatchObject({ status: 'published', review_status: 'none' });
     expect(res.json.manifest.manifest.format).toBe('textweaver.motion-comic/2');
+    expect(await titles()).toEqual(['Morning Market', 'Noy and the Buffalo']);
+    expect(raw.prepare(`SELECT reviewed_by, creator_id FROM projects WHERE id = 'demo-noy'`).get())
+      .toEqual({ reviewed_by: 'demo-reviewer', creator_id: 'demo-creator' });
+    expect(raw.prepare(`SELECT kind, status FROM jobs`).all()).toEqual([{ kind: 'package', status: 'queued' }]);
+  });
 
-    const books = (await call('GET', '/books')).json;
-    expect(books.map((b: { title: string }) => b.title).sort()).toEqual(['Morning Market', 'Noy and the Buffalo']);
-    const noy = books.find((b: { title: string }) => b.title === 'Noy and the Buffalo');
-    expect(noy).toMatchObject({ level: 'A1', reading_level: 'beginner', cover_url: '/demo-art/bg-ricefield-sunrise.webp' });
-    const book = (await call('GET', `/books/${noy.id}`, { user: '' })).json;
-    expect(book.package.manifest.editions.lite.chunks).toHaveLength(1);
+  it('requesting changes sends the book back with a note', async () => {
+    const { call, pkg, titles } = await submittable();
+    await call('POST', '/studio/projects/demo-noy/submit', { body: pkg });
+    expect((await call('POST', '/review/projects/demo-noy/request-changes', { user: 'demo-reviewer', body: { note: '' } })).status).toBe(400);
+    const res = await call('POST', '/review/projects/demo-noy/request-changes', { user: 'demo-reviewer', body: { note: 'Scene 2: simplify “buffalo”.' } });
+    expect(res.json).toMatchObject({ review_status: 'changes_requested', review_note: 'Scene 2: simplify “buffalo”.' });
+    expect((await call('GET', '/studio/projects/demo-noy')).json.project.review_note).toBe('Scene 2: simplify “buffalo”.');
+    expect((await call('GET', '/review/queue', { user: 'demo-reviewer' })).json).toEqual([]);
+    expect(await titles()).toEqual(['Morning Market']);
+  });
 
-    const jobs = raw.prepare(`SELECT kind, status FROM jobs`).all();
-    expect(jobs).toEqual([{ kind: 'package', status: 'queued' }]);
+  it('only reviewers and admins can review', async () => {
+    const { call, pkg } = await submittable();
+    await call('POST', '/studio/projects/demo-noy/submit', { body: pkg });
+    expect((await call('GET', '/review/queue')).status).toBe(403);
+    expect((await call('POST', '/review/projects/demo-noy/approve')).status).toBe(403);
+    expect((await call('GET', '/review/queue', { user: 'yee@admais.xyz' })).status).toBe(200);
   });
 
   it('refuses an invalid package', async () => {
-    const { call, pkg } = await publishable();
+    const { call, pkg } = await submittable();
     pkg.manifest.editions.lite.assets = {};
-    const res = await call('POST', '/studio/projects/demo-noy/publish', { body: pkg });
+    const res = await call('POST', '/studio/projects/demo-noy/submit', { body: pkg });
     expect(res.status).toBe(400);
     expect(res.json.error).toMatch(/image bg1 is missing/);
   });
 
-  it('back to draft removes it from the library', async () => {
-    const { call, pkg } = await publishable();
-    await call('POST', '/studio/projects/demo-noy/publish', { body: pkg });
-    expect((await call('POST', '/studio/projects/demo-noy/unpublish')).json.status).toBe('draft');
-    expect((await call('GET', '/books')).json.map((b: { title: string }) => b.title)).toEqual(['Morning Market']);
+  it('back to draft removes it from the library; reviewers can pull any book', async () => {
+    const { call, pkg, titles } = await submittable();
+    await call('POST', '/studio/projects/demo-noy/submit', { body: pkg });
+    await call('POST', '/review/projects/demo-noy/approve', { user: 'demo-reviewer' });
+    expect((await call('POST', '/studio/projects/demo-noy/unpublish', { user: 'writer@example.org' })).status).toBe(403);
+    expect((await call('POST', '/studio/projects/demo-noy/unpublish', { user: 'demo-reviewer' })).json.status).toBe('draft');
+    expect(await titles()).toEqual(['Morning Market']);
+  });
+});
+
+describe('staff sign-in', () => {
+  async function session() {
+    const api = await testApi({ auth: 'session' });
+    const post = (path: string, body: unknown, cookie?: string) => api.app.request(`/api${path}`, {
+      method: 'POST', headers: { 'content-type': 'application/json', ...(cookie ? { cookie } : {}) }, body: JSON.stringify(body),
+    });
+    const tokenFrom = (text: string) => decodeURIComponent(/token=([^&\s]+)/.exec(text)?.[1] ?? '');
+    return { ...api, post, tokenFrom };
+  }
+
+  it('emails a link to staff, and the link starts a session', async () => {
+    const { app, post, sent, tokenFrom } = await session();
+    const res = await post('/auth/request', { email: ' Writer@Example.org ', next: '/studio/review' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(sent).toHaveLength(1);
+    expect(sent[0].to).toBe('writer@example.org');
+    expect(sent[0].text).toContain('next=%2Fstudio%2Freview');
+
+    const verify = await post('/auth/verify', { token: tokenFrom(sent[0].text) });
+    expect(verify.status).toBe(200);
+    const cookie = verify.headers.get('set-cookie')!;
+    expect(cookie).toMatch(/tw_session=.+; Path=\/; HttpOnly; SameSite=Lax/);
+    expect(cookie).toContain('Secure');
+
+    const sessionCookie = cookie.split(';')[0];
+    const me = await (await app.request('/api/auth/me', { headers: { cookie: sessionCookie } })).json();
+    expect(me.user).toEqual({ email: 'writer@example.org', name: 'Writer', role: 'creator' });
+    expect((await app.request('/api/studio/projects', { headers: { cookie: sessionCookie } })).status).toBe(200);
+
+    await post('/auth/sign-out', {}, sessionCookie);
+    expect((await app.request('/api/studio/projects', { headers: { cookie: sessionCookie } })).status).toBe(401);
+  });
+
+  it('refuses people who aren’t staff, and reused links', async () => {
+    const { post, sent, tokenFrom } = await session();
+    expect((await post('/auth/request', { email: 'stranger@example.org' })).status).toBe(403);
+    expect(sent).toHaveLength(0);
+    await post('/auth/request', { email: 'writer@example.org' });
+    const token = tokenFrom(sent[0].text);
+    expect((await post('/auth/verify', { token })).status).toBe(200);
+    expect((await post('/auth/verify', { token })).status).toBe(400);
+  });
+
+  it('limits outstanding links, and refuses cross-site requests', async () => {
+    const { app, post } = await session();
+    for (let i = 0; i < 3; i++) expect((await post('/auth/request', { email: 'writer@example.org' })).status).toBe(200);
+    expect((await post('/auth/request', { email: 'writer@example.org' })).status).toBe(400);
+    const crossSite = await app.request('http://localhost/api/auth/request', {
+      method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://evil.example' }, body: JSON.stringify({ email: 'writer@example.org' }),
+    });
+    expect(crossSite.status).toBe(403);
+  });
+
+  it('removing someone from the staff list ends their access at once', async () => {
+    const { app, post, raw, sent, tokenFrom } = await session();
+    await post('/auth/request', { email: 'writer@example.org' });
+    const cookie = (await post('/auth/verify', { token: tokenFrom(sent[0].text) })).headers.get('set-cookie')!.split(';')[0];
+    raw.prepare(`DELETE FROM staff WHERE email = 'writer@example.org'`).run();
+    expect((await app.request('/api/studio/projects', { headers: { cookie } })).status).toBe(401);
+  });
+});
+
+describe('staff list (admins)', () => {
+  it('admins add, change and remove staff; others can’t', async () => {
+    const { call } = await testApi();
+    expect((await call('GET', '/admin/staff')).status).toBe(403);
+    const admin = 'yee@admais.xyz';
+    const added = await call('POST', '/admin/staff', { user: admin, body: { email: 'Didy@Example.org', name: 'Didy', role: 'reviewer' } });
+    expect(added.json).toEqual({ email: 'didy@example.org', name: 'Didy', role: 'reviewer' });
+    expect((await call('POST', '/admin/staff', { user: admin, body: { email: 'x@example.org', role: 'owner' } })).status).toBe(400);
+    expect((await call('GET', '/admin/staff', { user: admin })).json.map((s: { email: string }) => s.email)).toContain('didy@example.org');
+    expect((await call('DELETE', '/admin/staff/didy%40example.org', { user: admin })).status).toBe(200);
+    expect((await call('DELETE', `/admin/staff/${encodeURIComponent(admin)}`, { user: admin })).status).toBe(400);
   });
 });
 

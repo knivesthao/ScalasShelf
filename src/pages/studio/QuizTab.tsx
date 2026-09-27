@@ -1,16 +1,11 @@
-import { buildVocab, draftQuiz, newId, type QuizItem } from '@/lib/format';
-import type { StudioScene } from './useStudioProject';
+import { newId, type QuizItem } from '@/lib/format';
 
 interface QuizTabProps {
-  scenes: StudioScene[];
   quiz: QuizItem[];
   onChange: (quiz: QuizItem[]) => void;
 }
 
-export function QuizTab({ scenes, quiz, onChange }: QuizTabProps) {
-  const vocab = buildVocab(scenes.map((s) => s.draft));
-  const usable = vocab.filter((v) => v.meaning);
-
+export function QuizTab({ quiz, onChange }: QuizTabProps) {
   function updateItem(id: string, fields: Partial<QuizItem>) {
     onChange(quiz.map((q) => (q.id === id ? { ...q, ...fields } : q)));
   }
@@ -32,16 +27,7 @@ export function QuizTab({ scenes, quiz, onChange }: QuizTabProps) {
   return (
     <div className="quiz-tab">
       <h2>End-of-episode check</h2>
-      <p className="hint">
-        3–5 quick questions after the last scene. Drafts are built from the starred vocabulary ({usable.length} with
-        meanings); edit anything.
-      </p>
-      <div className="inspector-row">
-        <button className="generate-btn" disabled={usable.length < 2} onClick={() => onChange(draftQuiz(vocab))}>
-          {quiz.length ? 'Replace with a new draft' : 'Draft quiz from vocabulary'}
-        </button>
-        {usable.length < 2 && <span className="hint">Star at least 2 words with meanings in the Words tab.</span>}
-      </div>
+      <p className="hint">3–5 quick questions after the last scene, to check readers understood the story.</p>
 
       {quiz.map((item, i) => (
         <fieldset key={item.id} className="quiz-card">

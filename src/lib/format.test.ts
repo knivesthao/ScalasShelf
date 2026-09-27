@@ -98,6 +98,26 @@ describe('publish checklist', () => {
   });
 });
 
+describe('text on screen', () => {
+  it('goes into the shared text, keyed by scene, and only when there is some', () => {
+    const scenes = [
+      { ...sceneWith([{ text: 'Hello!' }]), caption: '  The next morning.  ' },
+      sceneWith([{ text: 'Hi!' }]),
+    ];
+    const pkg = buildPackage({ id: 'p1', title: 'T', level: 'A1' }, scenes, []);
+    expect(pkg.text.captions).toEqual({ '1': { en: 'The next morning.' } });
+    expect(buildPackage({ id: 'p1', title: 'T', level: 'A1' }, [sceneWith([{ text: 'Hi!' }])], []).text.captions).toBeUndefined();
+  });
+
+  it('counts as words for the scene and is level-checked', () => {
+    const settings = { id: 'p1', title: 'T', level: 'A1' as const };
+    const scene = { ...sceneWith([], true), bubbles: [], caption: 'The enormous market.' };
+    const messages = publishChecklist(settings, [scene], [], (t) => (t.includes('enormous') ? ['enormous'] : [])).map((i) => i.message);
+    expect(messages).not.toContain('No dialogue or narration.');
+    expect(messages).toContain('Text on screen has words above A1: enormous');
+  });
+});
+
 describe('package', () => {
   it('shares text across editions and strips authoring-only fields', () => {
     const scenes = Array.from({ length: 5 }, () => sceneWith([{ text: 'Hello!', audio: 'a.webm' }]));

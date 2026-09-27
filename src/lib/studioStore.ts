@@ -1,11 +1,14 @@
-// Where the Studio keeps projects: on this device (IndexedDB) until sign-in exists, then
-// the API. Both backends expose the same functions, so the Studio doesn't care which.
-// See FEATURES.cloudStudio.
+// Where the Studio keeps projects: the API for signed-in staff, or this device (IndexedDB)
+// when the cloud Studio is switched off. Both backends expose the same functions, so the
+// Studio doesn't care which. See FEATURES.cloudStudio.
 
 import { api } from './api';
 import { demoDraft } from './demoContent';
 import { FEATURES } from './features';
-import { emptyScene, type Level, type Package, type QuizItem, type SceneDraft } from './format';
+import { emptyCast, emptyScene, type Cast, type Level, type Package, type QuizItem, type SceneDraft } from './format';
+
+/** none → in_review (waiting for a reviewer) → changes_requested, or approved and published. */
+export type ReviewStatus = 'none' | 'in_review' | 'changes_requested';
 
 export interface ProjectCard {
   id: string;
@@ -13,6 +16,7 @@ export interface ProjectCard {
   title: string;
   level: Level;
   status: 'draft' | 'published';
+  review_status: ReviewStatus;
   created_at: string;
 }
 
@@ -20,7 +24,13 @@ export interface ProjectData extends ProjectCard {
   creator_id: string;
   description: string;
   quiz: QuizItem[];
+  /** Characters and places, reused across scenes. */
+  cast: Cast;
   manifest: Package | null;
+  /** The reviewer's note when changes were requested. */
+  review_note: string;
+  submitted_at: string | null;
+  reviewed_at: string | null;
 }
 
 export interface SceneData {
@@ -30,7 +40,7 @@ export interface SceneData {
 }
 
 export interface SaveInput {
-  project?: Partial<Pick<ProjectData, 'title' | 'description' | 'level' | 'quiz'>>;
+  project?: Partial<Pick<ProjectData, 'title' | 'description' | 'level' | 'quiz' | 'cast'>>;
   scenes?: { id: string; data: SceneDraft }[];
 }
 
@@ -41,11 +51,12 @@ export interface StudioStore {
   save(id: string, input: SaveInput): Promise<void>;
   addScene(projectId: string): Promise<SceneData>;
   deleteScene(projectId: string, sceneId: string): Promise<void>;
-  publish(id: string, pkg: Package): Promise<ProjectData>;
+  /** Sends the finished book to a reviewer. Only reviewers put books in the library. */
+  submit(id: string, pkg: Package): Promise<ProjectData>;
   unpublish(id: string): Promise<ProjectData>;
 }
 
-// ---- Server (after sign-in) ----
+// ---- Server (signed-in staff) ----
 
 export const serverStore: StudioStore = {
   list: () => api.get('/studio/projects'),
@@ -54,11 +65,11 @@ export const serverStore: StudioStore = {
   save: async (id, input) => { await api.put(`/studio/projects/${id}`, input); },
   addScene: (projectId) => api.post(`/studio/projects/${projectId}/scenes`),
   deleteScene: async (_projectId, sceneId) => { await api.delete(`/studio/scenes/${sceneId}`); },
-  publish: (id, pkg) => api.post(`/studio/projects/${id}/publish`, pkg),
+  submit: (id, pkg) => api.post(`/studio/projects/${id}/submit`, pkg),
   unpublish: (id) => api.post(`/studio/projects/${id}/unpublish`),
 };
 
-// ---- This device (for now) ----
+// ---- This device (cloud Studio off) ----
 
 interface LocalRecord {
   id: string;
@@ -101,7 +112,11 @@ async function write(rec: LocalRecord): Promise<void> {
 }
 
 const newId = () => crypto.randomUUID();
-const toCard = ({ id, type, title, level, status, created_at }: ProjectData): ProjectCard => ({ id, type, title, level, status, created_at });
+const toCard = ({ id, type, title, level, status, review_status, created_at }: ProjectData): ProjectCard =>
+  ({ id, type, title, level, status, review_status: review_status ?? 'none', created_at });
+const LOCAL_REVIEW = { review_status: 'none', review_note: '', submitted_at: null, reviewed_at: null } as const;
+/** Fields added after the first drafts were saved on devices. */
+const localDefaults = () => ({ ...LOCAL_REVIEW, cast: emptyCast() });
 
 /** First visit: start with the demo draft so the Studio isn't empty. */
 async function seedIfEmpty(): Promise<void> {
@@ -112,7 +127,7 @@ async function seedIfEmpty(): Promise<void> {
     id: draft.id,
     project: {
       id: draft.id, creator_id: 'this-device', type: 'comic', title: draft.title, description: draft.description,
-      level: draft.level, status: 'draft', quiz: [], manifest: null, created_at: new Date().toISOString(),
+      level: draft.level, status: 'draft', quiz: [], manifest: null, created_at: new Date().toISOString(), ...localDefaults(),
     },
     scenes: draft.scenes.map((data, i) => ({ id: `${draft.id}-s${i + 1}`, scene_number: i + 1, data })),
   });
@@ -128,14 +143,14 @@ export const deviceStore: StudioStore = {
     const id = newId();
     const project: ProjectData = {
       id, creator_id: 'this-device', type: 'comic', title: title.trim(), description: '', level,
-      status: 'draft', quiz: [], manifest: null, created_at: new Date().toISOString(),
+      status: 'draft', quiz: [], manifest: null, created_at: new Date().toISOString(), ...localDefaults(),
     };
     await write({ id, project, scenes: [{ id: newId(), scene_number: 1, data: emptyScene() }] });
     return project;
   },
   async get(id) {
     const { project, scenes } = await read(id);
-    return { project, scenes };
+    return { project: { ...localDefaults(), ...project }, scenes };
   },
   async save(id, input) {
     const rec = await read(id);
@@ -158,8 +173,8 @@ export const deviceStore: StudioStore = {
     rec.scenes = rec.scenes.filter((s) => s.id !== sceneId).map((s, i) => ({ ...s, scene_number: i + 1 }));
     await write(rec);
   },
-  async publish() {
-    throw new Error('Publishing opens once accounts are ready.');
+  async submit() {
+    throw new Error('Sign in to send books for review.');
   },
   async unpublish(id) {
     return (await read(id)).project;

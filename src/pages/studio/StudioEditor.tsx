@@ -1,33 +1,44 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGenerate } from '@/hooks/useGenerate';
 import { FEATURES } from '@/lib/features';
-import type { AssetRef, Layer, SceneDraft } from '@/lib/format';
+import { composeScene, putMember, removeMember, sceneCharacters, usedIn, type CastKind } from '@/lib/cast';
+import type { AssetRef, CastMember, Layer, SceneDraft } from '@/lib/format';
 import { useStudioProject, type StudioScene } from './useStudioProject';
+import { CastDialog } from './CastDialog';
+import { CastTab } from './CastTab';
 import { ScriptTab } from './ScriptTab';
 import { PanelTab } from './PanelTab';
 import { AudioTab } from './AudioTab';
-import { WordsTab } from './WordsTab';
 import { QuizTab } from './QuizTab';
 import { PublishTab } from './PublishTab';
 
-type Tab = 'script' | 'panel' | 'audio' | 'words' | 'quiz' | 'publish';
+type Tab = 'cast' | 'script' | 'panel' | 'audio' | 'quiz' | 'publish';
 
+/** First: the characters and places every scene is built from. */
+const CAST_TAB = { id: 'cast' as Tab, label: 'Cast' };
 const SCENE_TABS: { id: Tab; label: string }[] = [
   { id: 'script', label: 'Script' },
   // Art layout and voice recording need the rendering pipeline (FEATURES.rendering).
   ...(FEATURES.rendering ? [{ id: 'panel' as Tab, label: 'Panel' }, { id: 'audio' as Tab, label: 'Audio' }] : []),
-  { id: 'words', label: 'Words' },
 ];
 const EPISODE_TABS: { id: Tab; label: string }[] = [
   { id: 'quiz', label: 'Quiz' },
   { id: 'publish', label: 'Publish' },
 ];
 
-/** Speakers with a character on screen (narration has no character). */
-export function sceneCharacters(draft: SceneDraft): string[] {
-  const names = draft.bubbles.filter((b) => b.style !== 'narration').map((b) => b.speaker.trim());
-  return [...new Set(names.filter(Boolean))];
+/** Asset id for a cast member's current picture: the same picture shares one file across scenes. */
+function artId(member: CastMember, asset: AssetRef): string {
+  let h = 0;
+  for (let i = 0; i < asset.url.length; i++) h = (h * 31 + asset.url.charCodeAt(i)) | 0;
+  return `${member.id}-${Math.abs(h).toString(36)}`;
+}
+
+interface DialogState {
+  kind: CastKind;
+  member?: CastMember;
+  /** Script tab: pick the new member for the line or scene that asked for it. */
+  onCreated?: (member: CastMember) => void;
 }
 
 /** Drop assets no layer uses any more, so drafts don't grow with every re-roll. */
@@ -40,15 +51,51 @@ export function StudioEditor() {
   const { id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
   const studio = useStudioProject(id);
-  const { generateScene, rerollLayer } = useGenerate();
+  const { generateArt, rerollLayer } = useGenerate();
   const [sceneIndex, setSceneIndex] = useState(0);
   const [tab, setTab] = useState<Tab>('script');
   /** sceneId → 'scene' while the whole scene generates, or the layer id being re-rolled */
   const [busy, setBusy] = useState<Record<string, string>>({});
   const [genError, setGenError] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<DialogState | null>(null);
+  const openedOnce = useRef(false);
 
   const { project, scenes, loading, loadError, saveState } = studio;
   const scene: StudioScene | undefined = scenes[Math.min(sceneIndex, scenes.length - 1)];
+
+  // A new episode starts on the Cast tab: characters and places come first.
+  useEffect(() => {
+    if (!project || openedOnce.current) return;
+    openedOnce.current = true;
+    if (!project.cast.characters.length && !project.cast.places.length) setTab('cast');
+  }, [project]);
+
+  const drawMember = (kind: CastKind, name: string, description: string, previous?: AssetRef) =>
+    generateArt({ projectId: project!.id, kind, name, description: description || name, previous });
+
+  function saveMember(kind: CastKind, member: CastMember) {
+    if (!project) return;
+    studio.updateProject({ cast: putMember(project.cast, kind, member) });
+    // Readers see the character's name on their lines; keep it in step with renames.
+    if (kind === 'character') {
+      for (const s of scenes) {
+        if (s.draft.bubbles.some((b) => b.characterId === member.id && b.speaker !== member.name)) {
+          studio.updateScene(s.id, (d) => ({
+            ...d,
+            bubbles: d.bubbles.map((b) => (b.characterId === member.id ? { ...b, speaker: member.name } : b)),
+          }));
+        }
+      }
+    }
+    dialog?.onCreated?.(member);
+    setDialog(null);
+  }
+
+  function deleteMember(kind: CastKind, member: CastMember) {
+    if (!project) return;
+    studio.updateProject({ cast: removeMember(project.cast, kind, member.id) });
+    setDialog(null);
+  }
 
   function setBusyFor(sceneId: string, value: string | null) {
     setBusy((b) => {
@@ -59,18 +106,33 @@ export function StudioEditor() {
     });
   }
 
+  /** Lays the scene out from its place and characters, drawing any that have no picture yet. */
   async function handleGenerate(target: StudioScene) {
-    if (!project || !target.draft.description.trim()) return;
+    if (!project) return;
+    const place = project.cast.places.find((p) => p.id === target.draft.placeId);
+    if (!place) return;
     setGenError(null);
     setBusyFor(target.id, 'scene');
     try {
-      const art = await generateScene({
-        projectId: project.id,
-        sceneId: target.id,
-        description: target.draft.description,
-        characters: sceneCharacters(target.draft),
-      });
-      studio.updateScene(target.id, (d) => ({ ...d, layers: art.layers, assets: pruneAssets(art.layers, art.assets) }));
+      const withArt = async (kind: CastKind, m: CastMember): Promise<CastMember> =>
+        m.asset ? m : { ...m, asset: await drawMember(kind, m.name, m.description) };
+      const [drawnPlace, ...drawnCharacters] = await Promise.all([
+        withArt('place', place),
+        ...sceneCharacters(target.draft, project.cast).map((c) => withArt('character', c)),
+      ]);
+
+      let cast = project.cast;
+      if (drawnPlace !== place) cast = putMember(cast, 'place', drawnPlace);
+      drawnCharacters.forEach((c) => { if (!project.cast.characters.includes(c)) cast = putMember(cast, 'character', c); });
+      if (cast !== project.cast) studio.updateProject({ cast });
+
+      const art = composeScene(
+        { id: artId(drawnPlace, drawnPlace.asset!), asset: drawnPlace.asset!, prompt: drawnPlace.description },
+        drawnCharacters.map((c) => ({ id: artId(c, c.asset!), asset: c.asset!, name: c.name })),
+      );
+      studio.updateScene(target.id, (d) => ({
+        ...d, description: drawnPlace.description, layers: art.layers, assets: pruneAssets(art.layers, art.assets),
+      }));
     } catch (e) {
       setGenError(e instanceof Error ? e.message : 'Generation failed. Try again.');
     } finally {
@@ -117,7 +179,7 @@ export function StudioEditor() {
   if (!project) return <div className="empty"><p>{loadError ?? 'Project not found.'}</p></div>;
 
   const update = (fn: (d: SceneDraft) => SceneDraft) => scene && studio.updateScene(scene.id, fn);
-  const isEpisodeTab = EPISODE_TABS.some((t) => t.id === tab);
+  const isEpisodeTab = tab === 'cast' || EPISODE_TABS.some((t) => t.id === tab);
 
   return (
     <div className="studio-editor">
@@ -155,6 +217,10 @@ export function StudioEditor() {
       </nav>
 
       <div className="studio-tabs" role="tablist">
+        <button role="tab" aria-selected={tab === 'cast'} className={tab === 'cast' ? 'is-active' : ''} onClick={() => setTab('cast')}>
+          {CAST_TAB.label}
+        </button>
+        <span className="studio-tabs-divider" aria-hidden />
         {SCENE_TABS.map((t) => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'is-active' : ''}
             onClick={() => setTab(t.id)} disabled={!scene}>
@@ -186,7 +252,10 @@ export function StudioEditor() {
           </div>
           {tab === 'script' && (
             <ScriptTab
+              key={scene.id}
               draft={scene.draft}
+              cast={project.cast}
+              onCreate={(kind, onCreated) => setDialog({ kind, onCreated })}
               level={project.level}
               generating={busy[scene.id] === 'scene'}
               onChange={update}
@@ -204,13 +273,17 @@ export function StudioEditor() {
             />
           )}
           {tab === 'audio' && <AudioTab projectId={project.id} draft={scene.draft} onChange={update} />}
-          {tab === 'words' && <WordsTab draft={scene.draft} scenes={scenes} onChange={update} />}
         </div>
       )}
 
+      {tab === 'cast' && (
+        <div className="studio-pane">
+          <CastTab cast={project.cast} scenes={scenes.map((s) => s.draft)} onOpen={(kind, member) => setDialog({ kind, member })} />
+        </div>
+      )}
       {tab === 'quiz' && (
         <div className="studio-pane">
-          <QuizTab scenes={scenes} quiz={project.quiz} onChange={(quiz) => studio.updateProject({ quiz })} />
+          <QuizTab quiz={project.quiz} onChange={(quiz) => studio.updateProject({ quiz })} />
         </div>
       )}
       {tab === 'publish' && (
@@ -219,12 +292,27 @@ export function StudioEditor() {
             project={project}
             scenes={scenes}
             onUpdate={studio.updateProject}
-            onPublish={studio.publish}
+            onSubmit={studio.submit}
             onUnpublish={studio.unpublish}
             onJumpToScene={(i) => { setSceneIndex(i); setTab('script'); }}
           />
         </div>
       )}
+      {dialog && (() => {
+        const using = dialog.member ? usedIn(scenes.map((s) => s.draft), dialog.kind, dialog.member.id) : [];
+        return (
+          <CastDialog
+            kind={dialog.kind}
+            member={dialog.member}
+            canGenerate={FEATURES.rendering}
+            generate={(name, description, previous) => drawMember(dialog.kind, name, description, previous)}
+            onSave={(m) => saveMember(dialog.kind, m)}
+            onClose={() => setDialog(null)}
+            onDelete={dialog.member ? () => deleteMember(dialog.kind, dialog.member!) : undefined}
+            deleteBlocked={using.length ? `Used in scene ${using.join(', ')}. Change those first to delete it.` : undefined}
+          />
+        );
+      })()}
     </div>
   );
 }

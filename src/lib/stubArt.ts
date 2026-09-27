@@ -1,6 +1,7 @@
 // Placeholder art for demo/dev mode, standing in for the cloud image model.
 // Plain SVG shapes, and never any text: dialogue always stays in the bubbles.
 
+import { composeScene } from './cast';
 import { newId, type AssetRef, type Layer } from './format';
 
 function hash(s: string): number {
@@ -96,43 +97,16 @@ export function packCharacter(pack: DemoPack, speaker: string): { id: string; as
   return hit ? { id: hit.id, asset: { url: PACK_BASE + hit.file, bytes: hit.bytes, width: hit.width, height: hit.height } } : null;
 }
 
-// ---- Laying out a scene ----
-
-/** Character height as a fraction of the panel's height, and where their feet land. */
-const CHARACTER_HEIGHT = 0.42;
-const GROUND = 0.94;
+// ---- A whole scene (demo content) ----
 
 export function stubSceneArt(
   req: { description: string; characters: string[] },
   pack: DemoPack | null = null
 ): { layers: Layer[]; assets: Record<string, AssetRef> } {
   const bg = (pack && packBackground(pack, req.description)) ?? { id: newId('bg'), asset: stubBackground(req.description) };
-  const assets: Record<string, AssetRef> = { [bg.id]: bg.asset };
-  const layers: Layer[] = [
-    { id: newId('l'), asset: bg.id, role: 'background', x: 0, y: 0, w: 1, z: 0, motion: { preset: 'kenburns' }, prompt: req.description },
-  ];
-
-  const cast = req.characters.slice(0, 3);
-  const slot = 1 / Math.max(1, cast.length);
-  cast.forEach((name, i) => {
+  const characters = req.characters.map((name) => {
     const hit = (pack && packCharacter(pack, name)) ?? { id: newId('ch'), asset: stubCharacter(name) };
-    assets[hit.id] = hit.asset;
-    // Size by height so a wide buffalo and a tall girl stand at the same scale.
-    // Panel is 9:16, so its height is 16/9 panel-widths.
-    const aspect = (hit.asset.width ?? 200) / (hit.asset.height ?? 320);
-    const w = Math.min(slot * 0.95, CHARACTER_HEIGHT * (16 / 9) * aspect);
-    const h = (w / aspect) * (9 / 16);
-    layers.push({
-      id: newId('l'),
-      asset: hit.id,
-      role: 'character',
-      x: slot * i + (slot - w) / 2,
-      y: GROUND - h,
-      w,
-      z: i + 1,
-      motion: { preset: 'idle' },
-      prompt: name,
-    });
+    return { ...hit, name };
   });
-  return { layers, assets };
+  return composeScene({ ...bg, prompt: req.description }, characters);
 }

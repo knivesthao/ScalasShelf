@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/lib/api';
+import { currentUser, type StaffUser } from '@/lib/auth';
 import { FEATURES } from '@/lib/features';
 import { studioStore } from '@/lib/studioStore';
 import { LEVELS, type Level } from '@/lib/format';
+import { SignInPrompt, StudioHeader } from './StudioHeader';
 
 interface ProjectCard {
   id: string;
@@ -11,7 +13,10 @@ interface ProjectCard {
   title: string;
   level: Level;
   status: string;
+  review_status?: string;
 }
+
+const REVIEW_BADGE: Record<string, string> = { in_review: 'in review', changes_requested: 'changes requested' };
 
 export function StudioDashboard() {
   const navigate = useNavigate();
@@ -22,8 +27,10 @@ export function StudioDashboard() {
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [level, setLevel] = useState<Level>('A1');
+  const [user, setUser] = useState<StaffUser | null>(null);
 
   useEffect(() => {
+    if (FEATURES.cloudStudio) currentUser().then(setUser).catch(() => {});
     studioStore.list()
       .then(setProjects)
       .catch((e: Error) => (e instanceof ApiError && e.status === 401 ? setSignedOut(true) : setError(e.message)))
@@ -42,14 +49,11 @@ export function StudioDashboard() {
   }
 
   if (loading) return <div className="loading">Loading...</div>;
-  if (signedOut) return <div className="empty"><p>Log in to create content.</p></div>;
+  if (signedOut) return <SignInPrompt />;
 
   return (
     <div className="studio">
-      <header className="library-header">
-        <h1>Creator Studio</h1>
-        <Link to="/">← Library</Link>
-      </header>
+      <StudioHeader title="Creator Studio" user={user} />
       {error && <p className="studio-error" role="alert">{error}</p>}
       {!FEATURES.cloudStudio && (
         <p className="studio-note">
@@ -97,6 +101,7 @@ export function StudioDashboard() {
                 <h2>{p.title}</h2>
                 <span className="badge">{p.level}</span>
                 <span className="badge">{p.status}</span>
+                {p.review_status && REVIEW_BADGE[p.review_status] && <span className="badge">{REVIEW_BADGE[p.review_status]}</span>}
               </div>
             </Link>
           ))}

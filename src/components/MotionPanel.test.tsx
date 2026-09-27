@@ -49,4 +49,8 @@ describe('MotionPanel', () => {
     fireEvent.pointerDown(screen.getByText("We're late!"));
     expect(onSelect).toHaveBeenCalledWith('b1');
   });
+  it('prints the text on screen', () => {
+    render(<MotionPanel aspect="9:16" layers={[]} bubbles={[]} assets={assets} caption="The next morning." />);
+    expect(screen.getByText('The next morning.').className).toBe('mp-caption');
+  });
 });

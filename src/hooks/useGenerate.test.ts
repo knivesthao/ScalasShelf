@@ -17,17 +17,17 @@ describe('stubSceneArt', () => {
 });
 
 describe('useGenerate (dev mode)', () => {
-  it('returns placeholder art after a short delay, without calling the render API', async () => {
+  it('draws a placeholder character after a short delay, without calling the render API', async () => {
     vi.useFakeTimers();
     // No demo art pack available → plain shapes.
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }));
     const { result } = renderHook(() => useGenerate());
 
-    const pending = result.current.generateScene({ projectId: 'p', sceneId: 's', description: 'field', characters: ['Noy'] });
+    const pending = result.current.generateArt({ projectId: 'p', kind: 'character', name: 'Noy', description: 'a girl in a blue shirt' });
     await act(async () => { await vi.runAllTimersAsync(); });
-    const art = await pending;
+    const asset = await pending;
 
-    expect(art.layers).toHaveLength(2);
+    expect(asset.url).toMatch(/^data:image\/svg\+xml/);
     expect(fetchSpy.mock.calls.map(([url]) => String(url))).toEqual(['/demo-art/pack.json']);
     fetchSpy.mockRestore();
     vi.useRealTimers();
