@@ -181,4 +181,46 @@ export const deviceStore: StudioStore = {
   },
 };
 
-export const studioStore: StudioStore = FEATURES.cloudStudio ? serverStore : deviceStore;
+// ---- Guests ----
+// Visitors who aren't signed in can try the Studio as a guest: it runs the on-device
+// store, so drafts stay in their browser and nothing can be sent for review or published.
+
+const GUEST_KEY = 'textweaver-studio-guest';
+
+function readGuest(): boolean {
+  try {
+    return localStorage.getItem(GUEST_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+let guest = readGuest();
+
+export const isGuest = () => guest;
+
+export function setGuest(on: boolean): void {
+  guest = on;
+  try {
+    if (on) localStorage.setItem(GUEST_KEY, '1');
+    else localStorage.removeItem(GUEST_KEY);
+  } catch {
+    // Storage can be blocked (private windows); guest mode then lasts until the page reloads.
+  }
+}
+
+/** True when the Studio saves to the server: the cloud Studio is on and this isn't a guest. */
+export const cloudActive = () => FEATURES.cloudStudio && !guest;
+
+const active = (): StudioStore => (cloudActive() ? serverStore : deviceStore);
+
+export const studioStore: StudioStore = {
+  list: () => active().list(),
+  create: (input) => active().create(input),
+  get: (id) => active().get(id),
+  save: (id, input) => active().save(id, input),
+  addScene: (projectId) => active().addScene(projectId),
+  deleteScene: (projectId, sceneId) => active().deleteScene(projectId, sceneId),
+  submit: (id, pkg) => active().submit(id, pkg),
+  unpublish: (id) => active().unpublish(id),
+};

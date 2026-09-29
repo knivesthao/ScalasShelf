@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/lib/api';
 import { currentUser, type StaffUser } from '@/lib/auth';
 import { FEATURES } from '@/lib/features';
-import { studioStore } from '@/lib/studioStore';
+import { cloudActive, isGuest, setGuest, studioStore } from '@/lib/studioStore';
 import { LEVELS, type Level } from '@/lib/format';
 import { SignInPrompt, StudioHeader } from './StudioHeader';
 
@@ -29,13 +29,21 @@ export function StudioDashboard() {
   const [level, setLevel] = useState<Level>('A1');
   const [user, setUser] = useState<StaffUser | null>(null);
 
-  useEffect(() => {
-    if (FEATURES.cloudStudio) currentUser().then(setUser).catch(() => {});
+  function load() {
+    setLoading(true);
+    if (cloudActive()) currentUser().then(setUser).catch(() => {});
     studioStore.list()
-      .then(setProjects)
+      .then((list) => { setProjects(list); setSignedOut(false); })
       .catch((e: Error) => (e instanceof ApiError && e.status === 401 ? setSignedOut(true) : setError(e.message)))
       .finally(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(load, []);
+
+  function tryAsGuest() {
+    setGuest(true);
+    load();
+  }
 
   async function createProject(e: React.FormEvent) {
     e.preventDefault();
@@ -49,16 +57,18 @@ export function StudioDashboard() {
   }
 
   if (loading) return <div className="loading">Loading...</div>;
-  if (signedOut) return <SignInPrompt />;
+  if (signedOut) return <SignInPrompt onTryAsGuest={tryAsGuest} />;
 
   return (
     <div className="studio">
       <StudioHeader title="Creator Studio" user={user} />
       {error && <p className="studio-error" role="alert">{error}</p>}
-      {!FEATURES.cloudStudio && (
+      {!cloudActive() && (
         <p className="studio-note">
-          Write your story, choose the words to teach, and build the quiz. Drafts are saved on this device.
-          {!FEATURES.rendering && ' Illustrations and publishing are coming soon.'}
+          {isGuest() ? 'You’re trying the Studio as a guest. ' : ''}
+          Write your story and build the quiz. Drafts are saved on this device.
+          {!FEATURES.rendering && ' Illustrations are switched off for now.'}
+          {isGuest() && FEATURES.cloudStudio && <> Staff <Link to="/sign-in?next=%2Fstudio">sign in</Link> to send books for review.</>}
         </p>
       )}
 

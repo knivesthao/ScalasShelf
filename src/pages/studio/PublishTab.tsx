@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LEVELS, buildPackage, buildVocab, publishChecklist, validatePackage, type Level, type Package } from '@/lib/format';
 import { FEATURES } from '@/lib/features';
+import { cloudActive } from '@/lib/studioStore';
 import { wordsAboveLevel } from '@/lib/levels';
 import type { StudioProject, StudioScene } from './useStudioProject';
 
@@ -90,7 +91,7 @@ export function PublishTab({ project, scenes, onUpdate, onSubmit, onUnpublish, o
       </section>
 
       <section className="studio-section">
-        {!FEATURES.cloudStudio ? (
+        {!cloudActive() ? (
           <p className="studio-note">
             Sign in to send books for review. Your draft is saved on this device.
           </p>
@@ -100,13 +101,13 @@ export function PublishTab({ project, scenes, onUpdate, onSubmit, onUnpublish, o
             You can keep editing; send it again to replace the version under review.
           </p>
         ) : null}
-        {FEATURES.cloudStudio && project.review_status === 'changes_requested' && (
+        {cloudActive() && project.review_status === 'changes_requested' && (
           <div className="review-note" role="status">
             <strong>A reviewer asked for changes:</strong>
             <p>{project.review_note}</p>
           </div>
         )}
-        {FEATURES.cloudStudio && project.status === 'published' && project.review_status === 'none' && (
+        {cloudActive() && project.status === 'published' && project.review_status === 'none' && (
           <>
             <p className="check-ok">
               ✓ Published. The cloud packager builds the final images and audio for the Lite edition. Free for every reader.
@@ -114,7 +115,7 @@ export function PublishTab({ project, scenes, onUpdate, onSubmit, onUnpublish, o
             <p className="hint">Changes you make now reach readers after a reviewer approves them again.</p>
           </>
         )}
-        {FEATURES.cloudStudio && (
+        {cloudActive() && (
           <div className="new-project-actions">
             {submitButton(
               project.review_status === 'in_review' ? 'Send updated version'

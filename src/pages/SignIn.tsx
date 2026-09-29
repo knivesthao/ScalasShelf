@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { redeemSignInLink, requestSignInLink } from '@/lib/auth';
+import { setGuest } from '@/lib/studioStore';
 
 // Staff sign-in. With ?token=… (from the emailed link) it signs straight in; otherwise it
 // asks for an email and sends the link. Readers never need this page.
@@ -22,7 +23,7 @@ export function SignIn() {
     if (!token || redeemed.current) return;
     redeemed.current = true; // links work once; don't redeem twice under StrictMode
     redeemSignInLink(token)
-      .then(() => navigate(next, { replace: true }))
+      .then(() => { setGuest(false); navigate(next, { replace: true }); })
       .catch((e: Error) => { setError(e.message); setState('form'); });
   }, [token, next, navigate]);
 

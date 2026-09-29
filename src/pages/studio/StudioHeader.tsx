@@ -25,11 +25,17 @@ export function StudioHeader({ title, user }: { title: string; user: StaffUser |
 }
 
 /** Shown when the API says the visitor isn't signed in. */
-export function SignInPrompt({ next = '/studio' }: { next?: string }) {
+export function SignInPrompt({ next = '/studio', onTryAsGuest }: { next?: string; onTryAsGuest?: () => void }) {
   return (
     <div className="empty">
-      <p>Sign in to use the Studio.</p>
+      <p>Staff sign in to write and send books for review.</p>
       <Link className="buy-btn" to={`/sign-in?next=${encodeURIComponent(next)}`}>Staff sign-in</Link>
+      {onTryAsGuest && (
+        <>
+          <p className="hint">Just looking? Try the Studio with a demo book. Your drafts stay on this device.</p>
+          <button className="ghost-btn" onClick={onTryAsGuest}>Try the Studio as a guest</button>
+        </>
+      )}
     </div>
   );
 }

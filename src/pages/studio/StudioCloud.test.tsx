@@ -1,9 +1,11 @@
+import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { testApi } from '../../../api/src/testing';
 import { demoDraft } from '@/lib/demoContent';
 import { stubBackground, stubCharacter } from '@/lib/stubArt';
+import { isGuest, setGuest } from '@/lib/studioStore';
 
 // The Studio with its switched-off features turned on (server storage, art generation,
 // review before publishing), against the real API on in-memory SQLite: the browser's fetch('/api/...')
@@ -37,7 +39,7 @@ beforeEach(async () => {
   });
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); setGuest(false); });
 
 const rows = (sql: string) => api.raw.prepare(sql).all() as Record<string, unknown>[];
 const libraryTitles = async () => ((await (await api.app.request('/api/books')).json()) as { title: string }[]).map((b) => b.title).sort();
@@ -91,8 +93,17 @@ describe('StudioDashboard', () => {
   it('asks staff to sign in when the API says so', async () => {
     signedIn = false;
     renderAt('/studio');
-    expect(await screen.findByText('Sign in to use the Studio.')).toBeDefined();
+    expect(await screen.findByText('Staff sign in to write and send books for review.')).toBeDefined();
     expect(screen.getByRole('link', { name: 'Staff sign-in' }).getAttribute('href')).toBe('/sign-in?next=%2Fstudio');
+  });
+
+  it('lets visitors try the Studio as a guest, on this device only', async () => {
+    signedIn = false;
+    renderAt('/studio');
+    fireEvent.click(await screen.findByRole('button', { name: 'Try the Studio as a guest' }));
+    expect(await screen.findByText(/You’re trying the Studio as a guest\./)).toBeDefined();
+    expect(await screen.findByText('Noy and the Buffalo (my draft)')).toBeDefined();
+    expect(isGuest()).toBe(true);
   });
 
   it('creates a free English comic with a first scene', async () => {

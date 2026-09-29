@@ -52,7 +52,7 @@ describe('Studio (writing only, on this device)', () => {
   it('starts with a demo draft and says what’s coming', async () => {
     renderAt('/studio');
     expect(await screen.findByText('Noy and the Buffalo (my draft)')).toBeDefined();
-    expect(screen.getByText(/Drafts are saved on this device\. Illustrations and publishing are coming soon\./)).toBeDefined();
+    expect(screen.getByText(/Drafts are saved on this device\. Illustrations are switched off for now\./)).toBeDefined();
   });
 
   it('creates a comic on the device', async () => {
