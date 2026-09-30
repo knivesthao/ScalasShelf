@@ -151,6 +151,7 @@ async function seedIfEmpty(): Promise<void> {
     project: {
       id: draft.id, creator_id: 'this-device', type: 'comic', title: draft.title, description: draft.description,
       level: draft.level, purpose: 'learning', status: 'draft', quiz: [], manifest: null, created_at: new Date().toISOString(), ...localDefaults(),
+      cast: draft.cast,
     },
     scenes: draft.scenes.map((data, i) => ({ id: `${draft.id}-s${i + 1}`, scene_number: i + 1, data })),
   });

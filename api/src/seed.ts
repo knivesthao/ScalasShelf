@@ -26,9 +26,9 @@ export function demoStatements(db: Db, pack: DemoPack | null = loadPack()): Stmt
     const cover = pkg.manifest.editions.lite.assets[p.scenes[0].layers[0].asset]?.url ?? null;
     return [
       db.prepare(
-        `INSERT OR REPLACE INTO projects (id, creator_id, type, title, description, level, status, quiz, created_at, updated_at)
-         VALUES (?, ?, 'comic', ?, ?, ?, 'published', ?, ?, ?)`
-      ).bind(p.id, DEMO_CREATOR, p.title, p.description, p.level, JSON.stringify(quiz), p.created_at, p.created_at),
+        `INSERT OR REPLACE INTO projects (id, creator_id, type, title, description, level, status, quiz, cast_json, created_at, updated_at)
+         VALUES (?, ?, 'comic', ?, ?, ?, 'published', ?, ?, ?, ?)`
+      ).bind(p.id, DEMO_CREATOR, p.title, p.description, p.level, JSON.stringify(quiz), JSON.stringify(p.cast), p.created_at, p.created_at),
       ...p.scenes.map((s, i) =>
         db.prepare(`INSERT OR REPLACE INTO scenes (id, project_id, scene_number, data, updated_at) VALUES (?, ?, ?, ?, ?)`)
           .bind(`${p.id}-s${i + 1}`, p.id, i + 1, JSON.stringify(s), p.created_at)

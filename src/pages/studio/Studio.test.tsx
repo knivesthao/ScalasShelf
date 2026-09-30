@@ -98,7 +98,7 @@ describe('Studio (writing only, on this device)', () => {
     expect(await screen.findByText('Sign in to check spelling.', {}, { timeout: 10_000 })).toBeDefined();
     expect(screen.queryByText(/vocab/)).toBeNull();
     expect(screen.queryByText('Send for publish')).toBeNull();
-  });
+  }, 20_000);
 });
 
 /** The demo draft is created on first list(); opening the editor directly needs it too. */

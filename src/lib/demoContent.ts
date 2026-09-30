@@ -2,7 +2,7 @@
 // Shared by the API seed (api/src/seed.ts, scripts that load the Cloudflare database)
 // and the on-device Studio. Art comes from the demo art pack when given.
 
-import { bareWord, mergeTokens, tokenize, type Bubble, type Level, type SceneDraft, type Token } from './format';
+import { bareWord, mergeTokens, tokenize, type Bubble, type Cast, type Level, type SceneDraft, type Token } from './format';
 import { stubSceneArt, type DemoPack } from './stubArt';
 
 export interface DemoBook {
@@ -12,6 +12,22 @@ export interface DemoBook {
   level: Level;
   created_at: string;
   scenes: SceneDraft[];
+  /** The book's characters; every spoken line is linked to one, like a book made in the Studio. */
+  cast: Cast;
+}
+
+/** Everyone who speaks in the demo books. */
+const CHARACTERS: Record<string, string> = {
+  Noy: 'A Lao girl with short black hair, a white school shirt and a navy skirt, carrying a blue backpack.',
+  Buffalo: 'A big, friendly grey water buffalo with curved horns.',
+  Teacher: 'A kind teacher in a white shirt, standing at the school door.',
+  Vendor: 'A smiling market seller with a straw hat, behind a stall of mangoes.',
+};
+const characterId = (name: string) => `char_${name.toLowerCase()}`;
+
+function castFor(scenes: SceneDraft[]): Cast {
+  const names = [...new Set(scenes.flatMap((s) => s.bubbles.filter((b) => b.characterId).map((b) => b.speaker)))];
+  return { characters: names.map((name) => ({ id: characterId(name), name, description: CHARACTERS[name] ?? '' })), places: [] };
 }
 
 /** Simple meanings for words in the demo books; `vocab` words are taught (word list + quiz). */
@@ -49,9 +65,12 @@ function annotate(text: string): Token[] {
   });
 }
 
+/** A line of the story. Narration has no speaker; everyone else is a cast member. */
 function line(id: string, speaker: string, style: Bubble['style'], text: string, x: number, y: number, w: number, delay: number, words: boolean): Bubble {
+  const narration = style === 'narration';
   return {
-    id, speaker, style, x, y, w,
+    id, speaker: narration ? '' : speaker, style, x, y, w,
+    ...(narration ? {} : { characterId: characterId(speaker) }),
     motion: { preset: 'pop', delay },
     text: { en: text },
     tokens: words ? { en: annotate(text) } : {},
@@ -85,6 +104,7 @@ function noyScenes(pack: DemoPack | null | false, words: boolean): SceneDraft[] 
 
 /** The published demo books, with art and word meanings. */
 export function demoBooks(pack: DemoPack | null): DemoBook[] {
+  const market = marketScenes(pack);
   return [
     {
       id: 'demo-noy',
@@ -93,6 +113,7 @@ export function demoBooks(pack: DemoPack | null): DemoBook[] {
       level: 'A1',
       created_at: '2026-09-20T12:00:00Z',
       scenes: noyScenes(pack, true),
+      cast: castFor(noyScenes(false, true)),
     },
     {
       id: 'demo-market',
@@ -100,21 +121,26 @@ export function demoBooks(pack: DemoPack | null): DemoBook[] {
       description: 'Noy buys mangoes at the morning market.',
       level: 'A1',
       created_at: '2026-09-14T09:30:00Z',
-      scenes: [
-        scene('Early morning at the market. Mango stalls under colorful umbrellas.', [
-          line('b_mk1', 'Narrator', 'narration', 'It is early. The market is open.', 0.05, 0.04, 0.9, 300, true),
-          line('b_mk2', 'Vendor', 'speech', 'Mangoes! Sweet mangoes!', 0.35, 0.18, 0.6, 1000, true),
-        ], pack),
-        scene('Noy visits the market and talks to the mango vendor.', [
-          line('b_mk3', 'Noy', 'speech', 'Good morning! How much is one mango?', 0.04, 0.05, 0.6, 300, true),
-          line('b_mk4', 'Vendor', 'speech', 'Two thousand kip.', 0.4, 0.22, 0.55, 1300, true),
-        ], pack),
-        scene('Noy buys mangoes at the market stall.', [
-          line('b_mk5', 'Noy', 'speech', 'Three mangoes, please.', 0.04, 0.05, 0.55, 300, true),
-          line('b_mk6', 'Vendor', 'speech', 'Here you are. Thank you!', 0.4, 0.2, 0.55, 1300, true),
-        ], pack),
-      ],
+      scenes: market,
+      cast: castFor(market),
     },
+  ];
+}
+
+function marketScenes(pack: DemoPack | null): SceneDraft[] {
+  return [
+    scene('Early morning at the market. Mango stalls under colorful umbrellas.', [
+      line('b_mk1', 'Narrator', 'narration', 'It is early. The market is open.', 0.05, 0.04, 0.9, 300, true),
+      line('b_mk2', 'Vendor', 'speech', 'Mangoes! Sweet mangoes!', 0.35, 0.18, 0.6, 1000, true),
+    ], pack),
+    scene('Noy visits the market and talks to the mango vendor.', [
+      line('b_mk3', 'Noy', 'speech', 'Good morning! How much is one mango?', 0.04, 0.05, 0.6, 300, true),
+      line('b_mk4', 'Vendor', 'speech', 'Two thousand kip.', 0.4, 0.22, 0.55, 1300, true),
+    ], pack),
+    scene('Noy buys mangoes at the market stall.', [
+      line('b_mk5', 'Noy', 'speech', 'Three mangoes, please.', 0.04, 0.05, 0.55, 300, true),
+      line('b_mk6', 'Vendor', 'speech', 'Here you are. Thank you!', 0.4, 0.2, 0.55, 1300, true),
+    ], pack),
   ];
 }
 
@@ -127,5 +153,6 @@ export function demoDraft(): DemoBook {
     level: 'A1',
     created_at: new Date().toISOString(),
     scenes: noyScenes(false, false),
+    cast: castFor(noyScenes(false, false)),
   };
 }

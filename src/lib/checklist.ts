@@ -57,7 +57,8 @@ export function bookChecks(book: ChecklistBook, drafts: SceneDraft[]): Check[] {
   const lines: Problem[] = [];
   drafts.forEach((d, i) => d.bubbles.forEach((b, j) => {
     if (!b.text.en.trim()) lines.push({ scene: i + 1, message: `Line ${j + 1} has no words.` });
-    else if (b.style !== 'narration' && !b.characterId) lines.push({ scene: i + 1, message: `Line ${j + 1}: choose who says it.` });
+    // A named speaker counts: books from before the Cast tab name speakers without linking a cast member.
+    else if (b.style !== 'narration' && !b.characterId && !b.speaker.trim()) lines.push({ scene: i + 1, message: `Line ${j + 1}: choose who says it.` });
   }));
   checks.push(result('lines', 'Every line is complete', lines));
 

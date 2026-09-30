@@ -77,13 +77,14 @@ describe('studio projects', () => {
 
   it('saves the cast (characters and places), starting empty', async () => {
     const { call } = await testApi();
-    expect((await call('GET', '/studio/projects/demo-noy')).json.project.cast).toEqual({ characters: [], places: [] });
+    const { id } = (await call('POST', '/studio/projects', { body: { title: 'Market Day' } })).json;
+    expect((await call('GET', `/studio/projects/${id}`)).json.project.cast).toEqual({ characters: [], places: [] });
     const cast = {
       characters: [{ id: 'c1', name: 'Noy', description: 'a girl in a blue shirt', asset: { url: 'noy.webp' } }],
       places: [{ id: 'p1', name: 'The market', description: 'stalls and umbrellas' }],
     };
-    expect((await call('PUT', '/studio/projects/demo-noy', { body: { project: { cast } } })).status).toBe(200);
-    expect((await call('GET', '/studio/projects/demo-noy')).json.project.cast).toEqual(cast);
+    expect((await call('PUT', `/studio/projects/${id}`, { body: { project: { cast } } })).status).toBe(200);
+    expect((await call('GET', `/studio/projects/${id}`)).json.project.cast).toEqual(cast);
   });
 
   it('keeps other people out of a project', async () => {
@@ -187,7 +188,7 @@ describe('review before publishing', () => {
     // Whatever package a phone sends is ignored: the server builds its own.
     const res = await call('POST', '/studio/projects/demo-noy/submit', { body: { manifest: 'anything' } });
     expect(res.status).toBe(400);
-    expect(res.json.error).toMatch(/Scene 1: .* is empty/);
+    expect(res.json.error).toMatch(/Scene 1: Line 1 has no words/);
   });
 
   it('back to draft removes it from the library; reviewers can pull any book', async () => {

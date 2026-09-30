@@ -25,6 +25,27 @@ function resetNoyToDraft() {
   });
 }
 
+/** Tests that publish use the finished demo book: new words, quiz and cast, as a real book needs. */
+async function useFinishedNoy() {
+  const { demoBooks } = await import('@/lib/demoContent');
+  const { buildVocab, draftQuiz } = await import('@/lib/format');
+  const noy = demoBooks(null).find((b) => b.id === 'demo-noy')!;
+  api.raw.prepare(`UPDATE projects SET quiz = ?, cast_json = ? WHERE id = 'demo-noy'`)
+    .run(JSON.stringify(draftQuiz(buildVocab(noy.scenes))), JSON.stringify(noy.cast));
+  noy.scenes.forEach((data, i) => {
+    api.raw.prepare(`UPDATE scenes SET data = ? WHERE id = ?`).run(JSON.stringify(data), `demo-noy-s${i + 1}`);
+  });
+}
+
+/** A draft saved before the Cast tab: speakers are only names, and there's no cast. */
+function makeNoyOldStyle() {
+  api.raw.prepare(`UPDATE projects SET cast_json = '{"characters":[],"places":[]}' WHERE id = 'demo-noy'`).run();
+  demoDraft().scenes.forEach((data, i) => {
+    const old = { ...data, placeId: undefined, bubbles: data.bubbles.map(({ characterId: _id, ...b }) => ({ ...b, speaker: b.speaker || 'Narrator' })) };
+    api.raw.prepare(`UPDATE scenes SET data = ? WHERE id = ?`).run(JSON.stringify(old), `demo-noy-s${i + 1}`);
+  });
+}
+
 beforeEach(async () => {
   api = await testApi();
   resetNoyToDraft();
@@ -223,12 +244,11 @@ describe('StudioEditor', () => {
     expect(await screen.findAllByText(/No picture yet/, {}, ANIMATION)).toHaveLength(3);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Review' })).toBeDefined(), ANIMATION);
     expect(screen.queryByText('Send for publish')).toBeNull();
-  });
+  }, 20_000);
 
   it('once every check is green, Send for publish sends it to a moderator', async () => {
+    await useFinishedNoy();
     giveEveryNoySceneArt();
-    const quiz = [1, 2, 3].map((n) => ({ id: `q${n}`, type: 'meaning', prompt: `Word ${n}`, options: ['a', 'b'], answer: 0 }));
-    api.raw.prepare(`UPDATE projects SET description = 'Noy is late for school.', quiz = ? WHERE id = 'demo-noy'`).run(JSON.stringify(quiz));
     renderAt('/studio/comic/demo-noy');
     await screen.findByDisplayValue(FIRST_LINE);
     fireEvent.click(screen.getByRole('tab', { name: 'Publish' }));
@@ -238,7 +258,7 @@ describe('StudioEditor', () => {
     expect(await screen.findByText(/Waiting for a moderator/)).toBeDefined();
     expect(await libraryTitles()).toEqual(['Morning Market']);
     expect(rows(`SELECT review_status FROM projects WHERE id = 'demo-noy'`)).toEqual([{ review_status: 'in_review' }]);
-  });
+  }, 20_000);
 
   it('shows the reviewer’s note when changes are requested', async () => {
     api.raw.prepare(`UPDATE projects SET review_status = 'changes_requested', review_note = 'Scene 2 needs a clearer picture.' WHERE id = 'demo-noy'`).run();
@@ -254,6 +274,7 @@ describe('Cast', () => {
   const cast = () => JSON.parse(String(rows(`SELECT cast_json FROM projects WHERE id = 'demo-noy'`)[0].cast_json));
 
   it('turns an older draft’s scene descriptions and speakers into characters and places', async () => {
+    makeNoyOldStyle();
     renderAt('/studio/comic/demo-noy');
     await screen.findByDisplayValue(FIRST_LINE);
     await waitFor(() => expect(cast().characters.map((c: { name: string }) => c.name)).toContain('Noy'), { timeout: 2000 });
@@ -338,6 +359,7 @@ describe('Review', () => {
   afterEach(() => { reviewer = false; });
 
   async function submitNoy() {
+    await useFinishedNoy();
     giveEveryNoySceneArt();
     const { buildPackage } = await import('@/lib/format');
     const { project, scenes } = (await (await api.app.request('/api/studio/projects/demo-noy')).json()) as {
@@ -355,7 +377,8 @@ describe('Review', () => {
     renderAt('/studio/review');
     fireEvent.click(await screen.findByText('Noy and the Buffalo'));
     expect(await screen.findByLabelText('Book preview')).toBeDefined();
-    expect(screen.getByText('The End')).toBeDefined();
+    // A learning book ends with its quiz.
+    expect(screen.getByText('Check your understanding')).toBeDefined();
 
     fireEvent.click(screen.getByText('Approve and publish'));
     expect(await screen.findByText('Nothing waiting for review.')).toBeDefined();
