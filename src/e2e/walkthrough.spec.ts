@@ -15,11 +15,11 @@ test.describe('Scala’s Shelf walkthrough', () => {
     await expect(page.getByText('Check your understanding')).toBeVisible();
   });
 
-  test('download for offline shows up in My Library', async ({ page }) => {
+  test('download for offline shows up on My Shelf', async ({ page }) => {
     await page.goto('http://localhost:5173/book/book-demo-market');
-    await page.getByRole('button', { name: 'Download for offline' }).click();
-    await expect(page.getByText('✓ Saved on this phone')).toBeVisible({ timeout: 15000 });
-    await page.goto('http://localhost:5173/my-library');
+    await page.getByRole('button', { name: 'Download' }).click();
+    await expect(page.getByText('✓ Downloaded')).toBeVisible({ timeout: 15000 });
+    await page.goto('http://localhost:5173/my-shelf');
     await expect(page.locator('.saved-item')).toHaveCount(1);
   });
 

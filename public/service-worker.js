@@ -1,8 +1,8 @@
 // Scala’s Shelf service worker: keeps the app itself available offline.
 // Saved books (data + images) live in IndexedDB (src/lib/offline.ts); this only
 // caches the app's own files so it can start without internet.
-const CACHE_NAME = 'scalas-shelf-v3';
-const APP_SHELL = ['/', '/index.html', '/manifest.json'];
+const CACHE_NAME = 'scalas-shelf-v4';
+const APP_SHELL = ['/', '/index.html', '/manifest.json', '/logo.webp', '/favicon.png', '/icon-192.png'];
 
 // On a first visit the app's JS/CSS load before this worker takes control, so cache
 // them up front: read their hashed names from index.html. Demo covers too, if present.

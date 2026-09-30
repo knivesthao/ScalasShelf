@@ -9,6 +9,8 @@ export interface BookCard {
   title: string;
   description: string;
   level: Level;
+  /** Reading books have no level for readers. Missing on books saved before this existed. */
+  purpose?: 'learning' | 'reading';
   reading_level: string;
   cover_url: string | null;
   published_at: string;

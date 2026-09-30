@@ -25,9 +25,11 @@ export function Library() {
   return (
     <div className="library">
       <header className="library-header">
-        <h1>Scala’s Shelf</h1>
+        <h1 className="brand">
+          <img src="/logo.webp" alt="Scala’s Shelf" width="400" height="178" />
+        </h1>
         <nav className="header-nav">
-          <Link to="/my-library">My Library</Link>
+          <Link to="/my-shelf">My Shelf</Link>
           {!READER_ONLY && <Link to="/studio">Studio</Link>}
         </nav>
       </header>
@@ -53,8 +55,8 @@ export function Library() {
         <div className="loading">Loading...</div>
       ) : offline ? (
         <div className="empty">
-          <p>You’re offline. Books you’ve downloaded are still here:</p>
-          <Link to="/my-library" className="buy-btn">Open My Library</Link>
+          <p>You’re offline. Books saved on this phone are still on your shelf:</p>
+          <Link to="/my-shelf" className="buy-btn">Open My Shelf</Link>
         </div>
       ) : filtered.length === 0 ? (
         <div className="empty"><p>No books found.</p></div>
@@ -69,7 +71,7 @@ export function Library() {
               )}
               <div className="card-body">
                 <h2>{book.title}</h2>
-                <span className="badge">{book.level}</span>
+                <span className="badge">{book.purpose === 'reading' ? 'Reading' : book.level}</span>
               </div>
             </Link>
           ))}

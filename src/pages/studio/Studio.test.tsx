@@ -21,6 +21,7 @@ async function clearDevice() {
     tx.oncomplete = resolve;
   });
   db.close();
+  localStorage.removeItem('studio-demo-seeded');
 }
 
 let fetchSpy: MockInstance<typeof fetch>;
@@ -57,7 +58,7 @@ describe('Studio (writing only, on this device)', () => {
 
   it('creates a comic on the device', async () => {
     renderAt('/studio');
-    fireEvent.click(await screen.findByText('+ New Comic'));
+    fireEvent.click(await screen.findByText('+ New'));
     fireEvent.change(screen.getByPlaceholderText(/Noy and the Buffalo/), { target: { value: 'Market Day' } });
     fireEvent.click(screen.getByText('Create'));
     await waitFor(async () => expect((await deviceStore.list()).map((p) => p.title)).toContain('Market Day'));
@@ -67,7 +68,7 @@ describe('Studio (writing only, on this device)', () => {
     await deviceStoreReady();
     renderAt('/studio/comic/draft-noy');
     expect(await screen.findByDisplayValue(FIRST_LINE)).toBeDefined();
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Cast', 'Script', 'Quiz', 'Publish']);
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Details', 'Cast', 'Script', 'Quiz', 'Publish']);
     fireEvent.click(screen.getByText('Generate scene'));
     expect(screen.getByText(/Illustrations aren’t switched on yet/)).toBeDefined();
   });

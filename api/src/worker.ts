@@ -3,8 +3,10 @@
 // enabled on the account); secret WORKER_SECRET. The same Worker serves the built
 // app (dist/) as static assets, so the site and /api share one origin.
 // Staff sign-in emails go through Resend: secret RESEND_API_KEY, optional var EMAIL_FROM.
+// AI (binding AI, Workers AI) writes Studio suggestions; see services/ai.ts.
 
 import { createApp } from './app';
+import { workersAiText, type WorkersAi } from './services/ai';
 import { noMailer, resendMailer, sessionAuth, type Db, type FileStore } from './platform';
 import { sessionEmail } from './services/staff';
 
@@ -21,6 +23,7 @@ interface Bindings {
   WORKER_SECRET?: string;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
+  AI?: WorkersAi;
 }
 
 /** Until R2 is enabled: uploads fail with a clear message, everything else works. */
@@ -52,6 +55,7 @@ export default {
         ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM ?? 'Scala’s Shelf <noreply@admais.xyz>')
         : noMailer,
       workerSecret: env.WORKER_SECRET,
+      text: env.AI ? workersAiText(env.AI) : undefined,
     });
     return app.fetch(request, env, ctx as never);
   },

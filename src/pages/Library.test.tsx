@@ -6,7 +6,7 @@ import { clearSavedBooks, stubApi, stubObjectUrls, type TestApi } from '@/__test
 import { Library } from './Library';
 import { BookDetail } from './BookDetail';
 import { Reader } from './Reader';
-import { MyLibrary } from './MyLibrary';
+import { MyShelf } from './MyShelf';
 
 let api: TestApi;
 
@@ -27,7 +27,7 @@ function renderAt(path: string) {
         <Route path="/" element={<Library />} />
         <Route path="/book/:id" element={<BookDetail />} />
         <Route path="/read/:id" element={<Reader />} />
-        <Route path="/my-library" element={<MyLibrary />} />
+        <Route path="/my-shelf" element={<MyShelf />} />
       </Routes>
     </MemoryRouter>
   );
@@ -56,7 +56,7 @@ describe('Library', () => {
     api.setOnline(false);
     renderAt('/');
     expect(await screen.findByText(/You’re offline/)).toBeDefined();
-    expect(screen.getByText('Open My Library')).toBeDefined();
+    expect(screen.getByText('Open My Shelf')).toBeDefined();
   });
 });
 
@@ -71,23 +71,23 @@ describe('Book page', () => {
 
   it('downloads for offline, then opens with no connection', async () => {
     renderAt('/book/book-demo-market');
-    fireEvent.click(await screen.findByText('Download for offline'));
-    expect(await screen.findByText('✓ Saved on this phone')).toBeDefined();
+    fireEvent.click(await screen.findByRole('button', { name: 'Download' }));
+    expect(await screen.findByText('✓ Downloaded')).toBeDefined();
 
     cleanup();
     api.setOnline(false);
-    renderAt('/my-library');
+    renderAt('/my-shelf');
     expect(await screen.findByText('Morning Market')).toBeDefined();
-    expect(screen.getByText(/1 book · \d+ KB on this phone/)).toBeDefined();
+    expect(screen.getByText(/1 book · 1 saved on this phone \(\d+ KB\)/)).toBeDefined();
   });
 
   it('explains a failed download and keeps the button', async () => {
     renderAt('/book/book-demo-market');
-    await screen.findByText('Download for offline');
+    await screen.findByRole('button', { name: 'Download' });
     api.setOnline(false);
-    fireEvent.click(screen.getByText('Download for offline'));
+    fireEvent.click(screen.getByRole('button', { name: 'Download' }));
     expect(await screen.findByRole('alert')).toBeDefined();
-    expect(screen.getByText('Download for offline')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Download' })).toBeDefined();
   });
 });
 
@@ -125,8 +125,8 @@ describe('Reader', () => {
 
   it('reads a saved book with no connection, using local images', async () => {
     renderAt('/book/book-demo-market');
-    fireEvent.click(await screen.findByText('Download for offline'));
-    await screen.findByText('✓ Saved on this phone');
+    fireEvent.click(await screen.findByRole('button', { name: 'Download' }));
+    await screen.findByText('✓ Downloaded');
 
     cleanup();
     api.setOnline(false);
@@ -143,19 +143,46 @@ describe('Reader', () => {
   });
 });
 
-describe('My Library', () => {
+describe('My Shelf', () => {
   it('starts empty and explains what it is for', async () => {
-    renderAt('/my-library');
-    expect(await screen.findByText(/Books you download appear here/)).toBeDefined();
+    renderAt('/my-shelf');
+    expect(await screen.findByText(/Your shelf is empty/)).toBeDefined();
   });
 
-  it('removes a saved book', async () => {
+  it('adds a book from its page without downloading it', async () => {
     renderAt('/book/book-demo-market');
-    fireEvent.click(await screen.findByText('Download for offline'));
-    await screen.findByText('✓ Saved on this phone');
+    fireEvent.click(await screen.findByText('+ Shelf'));
+    expect(await screen.findByText('✓ On shelf')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Download' })).toBeDefined();
+
     cleanup();
-    renderAt('/my-library');
-    fireEvent.click(await screen.findByLabelText('Remove Morning Market'));
-    expect(await screen.findByText(/Books you download appear here/)).toBeDefined();
+    renderAt('/my-shelf');
+    expect(await screen.findByText('Morning Market')).toBeDefined();
+    expect(screen.getByText(/Needs internet/)).toBeDefined();
+  });
+
+  it('puts a book on the shelf when it is read', async () => {
+    renderAt('/read/book-demo-noy');
+    await screen.findByText('Noy and the Buffalo');
+    cleanup();
+    renderAt('/my-shelf');
+    expect(await screen.findByText('Noy and the Buffalo')).toBeDefined();
+    cleanup();
+    renderAt('/book/book-demo-noy');
+    expect(await screen.findByText('✓ On shelf')).toBeDefined();
+  });
+
+  it('removes a book, and its saved copy', async () => {
+    renderAt('/book/book-demo-market');
+    fireEvent.click(await screen.findByRole('button', { name: 'Download' }));
+    await screen.findByText('✓ Downloaded');
+    cleanup();
+    renderAt('/my-shelf');
+    fireEvent.click(await screen.findByLabelText('Remove Morning Market from my shelf'));
+    expect(await screen.findByText(/Your shelf is empty/)).toBeDefined();
+    cleanup();
+    renderAt('/book/book-demo-market');
+    expect(await screen.findByRole('button', { name: 'Download' })).toBeDefined();
+    expect(screen.getByText('+ Shelf')).toBeDefined();
   });
 });

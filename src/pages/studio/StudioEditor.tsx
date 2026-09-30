@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useGenerate } from '@/hooks/useGenerate';
+import { applyFinish, requestFinish, sceneWritten } from '@/lib/finish';
 import { FEATURES } from '@/lib/features';
 import { composeScene, putMember, removeMember, sceneCharacters, usedIn, type CastKind } from '@/lib/cast';
 import type { AssetRef, CastMember, Layer, SceneDraft } from '@/lib/format';
@@ -12,11 +14,14 @@ import { PanelTab } from './PanelTab';
 import { AudioTab } from './AudioTab';
 import { QuizTab } from './QuizTab';
 import { PublishTab } from './PublishTab';
+import { DetailsTab } from './DetailsTab';
 
-type Tab = 'cast' | 'script' | 'panel' | 'audio' | 'quiz' | 'publish';
+type Tab = 'details' | 'cast' | 'script' | 'panel' | 'audio' | 'quiz' | 'publish';
 
 /** First: the characters and places every scene is built from. */
 const CAST_TAB = { id: 'cast' as Tab, label: 'Cast' };
+/** Before everything: the book's title, description, type and level. */
+const DETAILS_TAB = { id: 'details' as Tab, label: 'Details' };
 const SCENE_TABS: { id: Tab; label: string }[] = [
   { id: 'script', label: 'Script' },
   // Art layout and voice recording need the rendering pipeline (FEATURES.rendering).
@@ -58,6 +63,7 @@ export function StudioEditor() {
   const [busy, setBusy] = useState<Record<string, string>>({});
   const [genError, setGenError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  const [confirmFinish, setConfirmFinish] = useState(false);
   const openedOnce = useRef(false);
 
   const { project, scenes, loading, loadError, saveState } = studio;
@@ -95,6 +101,28 @@ export function StudioEditor() {
     if (!project) return;
     studio.updateProject({ cast: removeMember(project.cast, kind, member.id) });
     setDialog(null);
+  }
+
+  /**
+   * AI writes the rest of the story. Written scenes stay as they are; empty ones are
+   * filled, then new scenes are added. Everything is a draft the writer edits.
+   */
+  async function finishWithAi() {
+    if (!project) return;
+    const drafts = scenes.map((s) => s.draft);
+    const result = await requestFinish(project, drafts);
+    const done = applyFinish(result, project, drafts);
+    studio.updateProject({ cast: done.cast, ...(done.quiz ? { quiz: done.quiz } : {}) });
+    // Only fill a scene that is still empty: the writer may have typed into it while Scala worked.
+    done.filled.forEach((draft, i) => studio.updateScene(scenes[i].id, (current) => (sceneWritten(current) ? current : draft)));
+    for (const draft of done.added) {
+      const added = await studio.addScene();
+      if (added) studio.updateScene(added.id, () => draft);
+    }
+    const firstFilled = Math.min(...done.filled.keys());
+    setSceneIndex(Number.isFinite(firstFilled) ? firstFilled : drafts.length);
+    setTab('script');
+    setConfirmFinish(false);
   }
 
   function setBusyFor(sceneId: string, value: string | null) {
@@ -179,18 +207,12 @@ export function StudioEditor() {
   if (!project) return <div className="empty"><p>{loadError ?? 'Project not found.'}</p></div>;
 
   const update = (fn: (d: SceneDraft) => SceneDraft) => scene && studio.updateScene(scene.id, fn);
-  const isEpisodeTab = tab === 'cast' || EPISODE_TABS.some((t) => t.id === tab);
+  const isEpisodeTab = tab === 'details' || tab === 'cast' || EPISODE_TABS.some((t) => t.id === tab);
 
   return (
     <div className="studio-editor">
       <div className="editor-toolbar">
         <button className="back-btn" onClick={() => navigate('/studio')}>← Studio</button>
-        <input
-          className="title-input"
-          aria-label="Title"
-          value={project.title}
-          onChange={(e) => studio.updateProject({ title: e.target.value })}
-        />
         <span className={`saving-indicator saving-indicator--${saveState}`}>
           {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved' : saveState === 'error' ? 'Not saved' : ''}
         </span>
@@ -216,7 +238,25 @@ export function StudioEditor() {
         <button className="scene-thumb scene-thumb--add" onClick={handleAddScene} aria-label="Add scene">+</button>
       </nav>
 
+      {confirmFinish && (
+        <ConfirmDialog
+          title="Let Scala finish the book?"
+          message={
+            'Scala, our AI, writes the rest of the story from your title, description, cast and the scenes you’ve written, and gives it an ending. ' +
+            'Scenes you’ve written stay as they are; empty scenes are filled and new ones are added' +
+            (project.purpose === 'reading' ? '.' : ', with new words marked and a quiz drafted.') +
+            ' New characters and places join the cast without pictures. You can edit everything.'
+          }
+          confirmLabel="✨ Yes, let Scala finish it"
+          onConfirm={finishWithAi}
+          onClose={() => setConfirmFinish(false)}
+        />
+      )}
+
       <div className="studio-tabs" role="tablist">
+        <button role="tab" aria-selected={tab === 'details'} className={tab === 'details' ? 'is-active' : ''} onClick={() => setTab('details')}>
+          {DETAILS_TAB.label}
+        </button>
         <button role="tab" aria-selected={tab === 'cast'} className={tab === 'cast' ? 'is-active' : ''} onClick={() => setTab('cast')}>
           {CAST_TAB.label}
         </button>
@@ -228,7 +268,7 @@ export function StudioEditor() {
           </button>
         ))}
         <span className="studio-tabs-divider" aria-hidden />
-        {EPISODE_TABS.map((t) => (
+        {EPISODE_TABS.filter((t) => !(t.id === 'quiz' && project.purpose === 'reading')).map((t) => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'is-active' : ''}
             onClick={() => setTab(t.id)}>
             {t.label}
@@ -256,7 +296,7 @@ export function StudioEditor() {
               draft={scene.draft}
               cast={project.cast}
               onCreate={(kind, onCreated) => setDialog({ kind, onCreated })}
-              level={project.level}
+              level={project.purpose === 'reading' ? null : project.level}
               generating={busy[scene.id] === 'scene'}
               onChange={update}
               onGenerate={() => handleGenerate(scene)}
@@ -286,12 +326,16 @@ export function StudioEditor() {
           <QuizTab quiz={project.quiz} onChange={(quiz) => studio.updateProject({ quiz })} />
         </div>
       )}
+      {tab === 'details' && (
+        <div className="studio-pane">
+          <DetailsTab project={project} scenes={scenes} onUpdate={studio.updateProject} onScalaFinish={() => setConfirmFinish(true)} />
+        </div>
+      )}
       {tab === 'publish' && (
         <div className="studio-pane">
           <PublishTab
             project={project}
             scenes={scenes}
-            onUpdate={studio.updateProject}
             onSubmit={studio.submit}
             onUnpublish={studio.unpublish}
             onJumpToScene={(i) => { setSceneIndex(i); setTab('script'); }}

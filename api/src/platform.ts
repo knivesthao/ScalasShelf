@@ -3,6 +3,7 @@
 //   FileStore — Cloudflare R2 in production, a folder locally
 //   Auth      — who is calling: staff sign in by email link (services/staff.ts); readers never do
 //   Mailer    — Resend in production; prints to the terminal locally
+//   TextModel — an AI text model (Cloudflare Workers AI in production; none locally)
 // Business logic only ever sees these, never Hono, D1 or R2 directly.
 
 /** The subset of D1's API we use. D1Database satisfies it structurally. */
@@ -47,6 +48,13 @@ export interface Mailer {
   development?: boolean;
 }
 
+/** A text-generation model. services/ai.ts decides which task uses which model. */
+export interface TextModel {
+  /** Provider and model id, for logs and usage tracking, e.g. "workers-ai/@cf/meta/llama-3.1-8b-instruct". */
+  name: string;
+  complete(system: string, prompt: string, maxTokens: number): Promise<string>;
+}
+
 export interface Platform {
   db: Db;
   files: FileStore;
@@ -56,6 +64,8 @@ export interface Platform {
   secureCookies?: boolean;
   /** Shared secret the GPU worker uses to claim and finish jobs. */
   workerSecret?: string;
+  /** AI text model for Studio suggestions. Without one, suggestions fall back to simple rules. */
+  text?: TextModel;
 }
 
 export const SESSION_COOKIE = 'tw_session';

@@ -3,8 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/lib/api';
 import { currentUser, type StaffUser } from '@/lib/auth';
 import { FEATURES } from '@/lib/features';
-import { cloudActive, isGuest, setGuest, studioStore } from '@/lib/studioStore';
-import { LEVELS, type Level } from '@/lib/format';
+import { cloudActive, isGuest, moveDeviceDraftsToAccount, setGuest, studioStore, type NewProject } from '@/lib/studioStore';
+import type { Level } from '@/lib/format';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Toast } from '@/components/Toast';
+import { NewBookDialog } from './NewBookDialog';
 import { SignInPrompt, StudioHeader } from './StudioHeader';
 
 interface ProjectCard {
@@ -12,6 +15,7 @@ interface ProjectCard {
   type: string;
   title: string;
   level: Level;
+  purpose?: 'learning' | 'reading';
   status: string;
   review_status?: string;
 }
@@ -25,35 +29,40 @@ export function StudioDashboard() {
   const [signedOut, setSignedOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [title, setTitle] = useState('');
-  const [level, setLevel] = useState<Level>('A1');
+  const [deleting, setDeleting] = useState<ProjectCard | null>(null);
   const [user, setUser] = useState<StaffUser | null>(null);
+  const [movedCount, setMovedCount] = useState(0);
 
-  function load() {
+  async function load() {
     setLoading(true);
-    if (cloudActive()) currentUser().then(setUser).catch(() => {});
+    if (cloudActive()) {
+      const me = await currentUser().catch(() => null);
+      setUser(me);
+      // Signed in: bring over anything written here as a guest, then clear it from the device.
+      if (me) setMovedCount(await moveDeviceDraftsToAccount().catch(() => 0));
+    }
     studioStore.list()
       .then((list) => { setProjects(list); setSignedOut(false); })
       .catch((e: Error) => (e instanceof ApiError && e.status === 401 ? setSignedOut(true) : setError(e.message)))
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []);
+  useEffect(() => { void load(); }, []);
 
   function tryAsGuest() {
     setGuest(true);
-    load();
+    void load();
   }
 
-  async function createProject(e: React.FormEvent) {
-    e.preventDefault();
-    if (!title.trim()) return;
-    try {
-      const project = await studioStore.create({ title: title.trim(), level });
-      navigate(`/studio/${project.type}/${project.id}`);
-    } catch (err) {
-      setError((err as Error).message);
-    }
+  async function deleteProject(p: ProjectCard) {
+    await studioStore.remove(p.id);
+    setProjects((list) => list.filter((x) => x.id !== p.id));
+    setDeleting(null);
+  }
+
+  async function createProject(input: NewProject) {
+    const project = await studioStore.create(input);
+    navigate(`/studio/${project.type}/${project.id}`);
   }
 
   if (loading) return <div className="loading">Loading...</div>;
@@ -63,57 +72,56 @@ export function StudioDashboard() {
     <div className="studio">
       <StudioHeader title="Creator Studio" user={user} />
       {error && <p className="studio-error" role="alert">{error}</p>}
+      {movedCount > 0 && (
+        <Toast onDone={() => setMovedCount(0)}>
+          Moved {movedCount} {movedCount === 1 ? 'draft' : 'drafts'} from this device into your account.
+        </Toast>
+      )}
       {!cloudActive() && (
-        <p className="studio-note">
-          {isGuest() ? 'You’re trying the Studio as a guest. ' : ''}
-          Write your story and build the quiz. Drafts are saved on this device.
-          {!FEATURES.rendering && ' Illustrations are switched off for now.'}
-          {isGuest() && FEATURES.cloudStudio && <> Staff <Link to="/sign-in?next=%2Fstudio">sign in</Link> to send books for review.</>}
-        </p>
+        // Collapsed to one line; tap to read the whole note.
+        <details className="guest-note">
+          <summary>{isGuest() ? 'You’re trying the Studio as a guest' : 'Drafts are saved on this device'}</summary>
+          <p>
+            Write your story and build the quiz. Drafts are saved on this device.
+            {!FEATURES.rendering && ' Illustrations are switched off for now.'}
+            {isGuest() && FEATURES.cloudStudio && <> Staff <Link to="/sign-in?next=%2Fstudio">sign in</Link> to send books for review.</>}
+          </p>
+        </details>
       )}
 
-      {creating ? (
-        <form className="new-project" onSubmit={createProject}>
-          <h2>New English comic</h2>
-          <label>
-            Title
-            <input
-              autoFocus
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Noy and the Buffalo"
-            />
-          </label>
-          <label>
-            Level
-            <select value={level} onChange={(e) => setLevel(e.target.value as Level)}>
-              {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
-            </select>
-          </label>
-          <div className="new-project-actions">
-            <button type="submit" className="buy-btn" disabled={!title.trim()}>Create</button>
-            <button type="button" className="ghost-btn" onClick={() => setCreating(false)}>Cancel</button>
-          </div>
-        </form>
-      ) : (
-        <div className="studio-actions">
-          <button className="buy-btn" onClick={() => setCreating(true)}>+ New Comic</button>
-        </div>
+      <div className="studio-actions">
+        <button className="buy-btn" onClick={() => setCreating(true)}>+ New</button>
+      </div>
+      {deleting && (
+        <ConfirmDialog
+          title="Delete this draft?"
+          message={`“${deleting.title}” and all its scenes will be deleted. This can’t be undone.`}
+          confirmLabel="Delete draft"
+          danger
+          onConfirm={() => deleteProject(deleting)}
+          onClose={() => setDeleting(null)}
+        />
       )}
+      {creating && <NewBookDialog canUseAi={cloudActive()} onCreate={createProject} onClose={() => setCreating(false)} />}
 
       {projects.length === 0 ? (
         <div className="empty"><p>No projects yet.</p></div>
       ) : (
         <div className="content-grid">
           {projects.map((p) => (
-            <Link to={`/studio/${p.type}/${p.id}`} key={p.id} className="content-card">
-              <div className="card-body">
+            <div key={p.id} className="content-card project-card">
+              <Link to={`/studio/${p.type}/${p.id}`} className="card-body">
                 <h2>{p.title}</h2>
-                <span className="badge">{p.level}</span>
+                {p.purpose === 'reading' ? <span className="badge">reading</span> : <span className="badge">{p.level}</span>}
                 <span className="badge">{p.status}</span>
                 {p.review_status && REVIEW_BADGE[p.review_status] && <span className="badge">{REVIEW_BADGE[p.review_status]}</span>}
-              </div>
-            </Link>
+              </Link>
+              {p.status === 'draft' && (
+                <button className="icon-btn project-delete" onClick={() => setDeleting(p)} aria-label={`Delete ${p.title}`} title="Delete draft">
+                  🗑
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}

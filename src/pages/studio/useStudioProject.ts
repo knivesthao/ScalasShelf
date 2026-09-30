@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { studioStore, type ReviewStatus } from '@/lib/studioStore';
+import { studioStore, type ReviewStatus, type Purpose } from '@/lib/studioStore';
 import { adoptCast } from '@/lib/cast';
 import { emptyCast, emptyScene, type Cast, type Level, type Package, type QuizItem, type SceneDraft } from '@/lib/format';
 
@@ -14,6 +14,7 @@ export interface StudioProject {
   title: string;
   description: string;
   level: Level;
+  purpose: Purpose;
   status: 'draft' | 'published';
   review_status: ReviewStatus;
   review_note: string;
@@ -30,7 +31,7 @@ export interface StudioScene {
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-type EditableFields = Partial<Pick<StudioProject, 'title' | 'description' | 'level' | 'quiz' | 'cast'>>;
+type EditableFields = Partial<Pick<StudioProject, 'title' | 'description' | 'level' | 'purpose' | 'quiz' | 'cast'>>;
 
 interface SceneDto {
   id: string;

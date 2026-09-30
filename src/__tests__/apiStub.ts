@@ -37,6 +37,6 @@ export function stubObjectUrls() {
 
 /** Empties this device's saved books between tests (fake-indexeddb). */
 export async function clearSavedBooks() {
-  const { listSavedBooks, removeSavedBook } = await import('@/lib/offline');
-  for (const b of await listSavedBooks()) await removeSavedBook(b.id);
+  const { listShelf, removeFromShelf } = await import('@/lib/offline');
+  for (const b of await listShelf()) await removeFromShelf(b.id);
 }

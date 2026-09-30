@@ -25,6 +25,10 @@ directory = "../dist"
 not_found_handling = "single-page-application"
 run_worker_first = ["/api/*"]
 
+# Workers AI (free daily allowance) for Studio suggestions: see src/services/ai.ts.
+[ai]
+binding = "AI"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "textweaver"

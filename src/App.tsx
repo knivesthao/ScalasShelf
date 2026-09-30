@@ -1,12 +1,11 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { InstallPrompt } from './components/InstallPrompt';
 import { READER_ONLY } from './lib/features';
 import { Library } from './pages/Library';
 import { BookDetail } from './pages/BookDetail';
 import { Reader } from './pages/Reader';
-import { MyLibrary } from './pages/MyLibrary';
+import { MyShelf } from './pages/MyShelf';
 import { Safeguarding } from './pages/Safeguarding';
 
 // Staff pages load on demand, so readers never download them. The reader-only build
@@ -25,13 +24,13 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div className="app">
-        <InstallPrompt />
         <Suspense fallback={<div className="loading">Loading...</div>}>
           <Routes>
             <Route path="/" element={<Library />} />
             <Route path="/book/:id" element={<BookDetail />} />
             <Route path="/read/:id" element={<Reader />} />
-            <Route path="/my-library" element={<MyLibrary />} />
+            <Route path="/my-shelf" element={<MyShelf />} />
+            <Route path="/my-library" element={<Navigate to="/my-shelf" replace />} />
             <Route path="/about/safeguarding" element={<Safeguarding />} />
             {!READER_ONLY && (
               <>

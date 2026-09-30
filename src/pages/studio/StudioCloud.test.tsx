@@ -101,21 +101,24 @@ describe('StudioDashboard', () => {
     signedIn = false;
     renderAt('/studio');
     fireEvent.click(await screen.findByRole('button', { name: 'Try the Studio as a guest' }));
-    expect(await screen.findByText(/You’re trying the Studio as a guest\./)).toBeDefined();
+    expect(await screen.findByText(/You’re trying the Studio as a guest/)).toBeDefined();
     expect(await screen.findByText('Noy and the Buffalo (my draft)')).toBeDefined();
     expect(isGuest()).toBe(true);
   });
 
   it('creates a free English comic with a first scene', async () => {
     renderAt('/studio');
-    fireEvent.click(await screen.findByText('+ New Comic'));
+    fireEvent.click(await screen.findByText('+ New'));
     fireEvent.change(screen.getByPlaceholderText(/Noy and the Buffalo/), { target: { value: 'Market Day' } });
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'A2' } });
+    fireEvent.change(screen.getByPlaceholderText(/in your own words/), { target: { value: 'Noy sells mangoes at the market.' } });
+    fireEvent.click(screen.getByLabelText(/Reading book/));
     fireEvent.click(screen.getByText('Create'));
 
     await waitFor(() => expect(rows(`SELECT title FROM projects WHERE title = 'Market Day'`)).toHaveLength(1));
     const [project] = rows(`SELECT * FROM projects WHERE title = 'Market Day'`);
-    expect(project).toMatchObject({ level: 'A2', status: 'draft', creator_id: 'demo-creator' });
+    expect(project).toMatchObject({
+      level: 'A1', purpose: 'reading', description: 'Noy sells mangoes at the market.', status: 'draft', creator_id: 'demo-creator',
+    });
     expect(project).not.toHaveProperty('price_kip');
     expect(rows(`SELECT id FROM scenes WHERE project_id = '${project.id}'`)).toHaveLength(1);
   });
@@ -159,7 +162,7 @@ describe('StudioEditor', () => {
   it('has no Words tab: it’s a reading book, not a dictionary', async () => {
     renderAt('/studio/comic/demo-noy');
     await screen.findByDisplayValue(FIRST_LINE);
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Cast', 'Script', 'Panel', 'Audio', 'Quiz', 'Publish']);
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Details', 'Cast', 'Script', 'Panel', 'Audio', 'Quiz', 'Publish']);
   });
 
   it('enables Generate scene only when every line is filled in', async () => {
@@ -313,7 +316,7 @@ describe('Cast', () => {
 
   it('opens a brand-new episode on the Cast tab', async () => {
     renderAt('/studio');
-    fireEvent.click(await screen.findByText('+ New Comic'));
+    fireEvent.click(await screen.findByText('+ New'));
     fireEvent.change(screen.getByPlaceholderText(/Noy and the Buffalo/), { target: { value: 'River Day' } });
     fireEvent.click(screen.getByText('Create'));
     expect(await screen.findByText(/Make your characters and places first/)).toBeDefined();

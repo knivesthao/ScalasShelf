@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ComicView } from '@/components/ComicView';
 import { loadBook, type Book } from '@/lib/books';
 import type { AssetRef } from '@/lib/format';
-import { savedImageUrls } from '@/lib/offline';
+import { addToShelf, savedImageUrls } from '@/lib/offline';
 
 // Reads a published comic (rendering in components/ComicView). Saved books load from the
 // phone (no internet needed); others stream from the library.
@@ -36,6 +36,8 @@ export function Reader() {
           setAssets(lite);
         }
         setBook(b);
+        // Reading a book puts it on the reader's shelf.
+        addToShelf(b).catch(() => {});
       })
       .catch(() => setError('This book isn’t on your phone, and there’s no internet connection.'));
     return () => objectUrls.forEach((u) => URL.revokeObjectURL(u));
@@ -52,7 +54,7 @@ export function Reader() {
     return (
       <div className="reader">
         <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
-        <div className="empty"><p>{error}</p><Link to="/my-library" className="buy-btn">My Library</Link></div>
+        <div className="empty"><p>{error}</p><Link to="/my-shelf" className="buy-btn">My Shelf</Link></div>
       </div>
     );
   }

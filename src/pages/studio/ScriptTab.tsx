@@ -8,7 +8,8 @@ import { hasWordList, wordsAboveLevel } from '@/lib/levels';
 interface ScriptTabProps {
   draft: SceneDraft;
   cast: Cast;
-  level: Level;
+  /** Null for reading books: no level, so no word checks. */
+  level: Level | null;
   generating: boolean;
   onChange: (fn: (d: SceneDraft) => SceneDraft) => void;
   onGenerate: () => void;
@@ -42,7 +43,8 @@ export function ScriptTab({ draft, cast, level, generating, onChange, onGenerate
   const place = cast.places.find((p) => p.id === draft.placeId);
   const taught = draft.bubbles.flatMap((b) => (b.tokens.en ?? []).filter((t) => t.v).map((t) => bareWord(t.t)));
   const ready = scriptReady(draft);
-  const captionHard = draft.caption?.trim() ? wordsAboveLevel(draft.caption, level, [...speakers, ...taught]) : [];
+  const aboveLevel = (text: string) => (level ? wordsAboveLevel(text, level, [...speakers, ...taught]) : []);
+  const captionHard = draft.caption?.trim() ? aboveLevel(draft.caption) : [];
 
   function generate() {
     // Until the illustration pipeline is switched on (FEATURES.rendering), say so instead.
@@ -145,13 +147,13 @@ export function ScriptTab({ draft, cast, level, generating, onChange, onGenerate
       <section className="studio-section">
         <div className="section-header">
           <h3>Lines</h3>
-          {!hasWordList(level) && <span className="hint">No word list for {level} yet, so level checks are off.</span>}
+          {level && !hasWordList(level) && <span className="hint">No word list for {level} yet, so level checks are off.</span>}
         </div>
 
         {draft.bubbles.length === 0 && <p className="hint">Add the first line of dialogue or narration.</p>}
 
         {draft.bubbles.map((b, i) => {
-          const hard = wordsAboveLevel(b.text.en, level, [...speakers, ...taught]);
+          const hard = aboveLevel(b.text.en);
           return (
             <div key={b.id} className="line-card">
               <div className="line-meta">

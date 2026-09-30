@@ -7,12 +7,16 @@ import type { Db } from '../platform';
 import { queueJob } from './jobs';
 
 export type ReviewStatus = 'none' | 'in_review' | 'changes_requested';
+/** Learning books teach English (level, new words, quiz); reading books are just for reading. */
+export type Purpose = 'learning' | 'reading';
+const isPurpose = (v: unknown): v is Purpose => v === 'learning' || v === 'reading';
 
 export interface ProjectCard {
   id: string;
   type: 'comic' | 'book';
   title: string;
   level: Level;
+  purpose: Purpose;
   status: 'draft' | 'published';
   review_status: ReviewStatus;
   created_at: string;
@@ -125,22 +129,27 @@ async function ownProject(db: Db, userId: string, projectId: string): Promise<Pr
 export async function listProjects(db: Db, userId: string): Promise<ProjectCard[]> {
   const { results } = await db
     .prepare(
-      `SELECT id, type, title, level, status, review_status, created_at FROM projects WHERE creator_id = ? ORDER BY created_at DESC`
+      `SELECT id, type, title, level, purpose, status, review_status, created_at FROM projects WHERE creator_id = ? ORDER BY created_at DESC`
     )
     .bind(userId)
     .all<ProjectCard>();
   return results;
 }
 
-export async function createProject(db: Db, userId: string, input: { title?: unknown; level?: unknown }): Promise<Project> {
+export async function createProject(
+  db: Db, userId: string, input: { title?: unknown; level?: unknown; description?: unknown; purpose?: unknown },
+): Promise<Project> {
   const title = checkTitle(input.title);
   const level = isLevel(input.level) ? input.level : 'A1';
+  const purpose = isPurpose(input.purpose) ? input.purpose : 'learning';
+  const description = typeof input.description === 'string' ? input.description.trim().slice(0, 2000) : '';
   const id = crypto.randomUUID();
   const ts = now();
   await db.batch([
     db.prepare(
-      `INSERT INTO projects (id, creator_id, type, title, level, created_at, updated_at) VALUES (?, ?, 'comic', ?, ?, ?, ?)`
-    ).bind(id, userId, title, level, ts, ts),
+      `INSERT INTO projects (id, creator_id, type, title, description, level, purpose, created_at, updated_at)
+       VALUES (?, ?, 'comic', ?, ?, ?, ?, ?, ?)`
+    ).bind(id, userId, title, description, level, purpose, ts, ts),
     db.prepare(`INSERT INTO scenes (id, project_id, scene_number, data, updated_at) VALUES (?, ?, 1, ?, ?)`)
       .bind(crypto.randomUUID(), id, JSON.stringify(emptyScene()), ts),
   ]);
@@ -160,7 +169,7 @@ export async function getProject(db: Db, userId: string, projectId: string): Pro
 }
 
 export interface SaveInput {
-  project?: { title?: unknown; description?: unknown; level?: unknown; quiz?: unknown; cast?: unknown };
+  project?: { title?: unknown; description?: unknown; level?: unknown; purpose?: unknown; quiz?: unknown; cast?: unknown };
   scenes?: { id: string; data: unknown }[];
 }
 
@@ -181,6 +190,10 @@ export async function saveProject(db: Db, userId: string, projectId: string, inp
   if (p.level !== undefined) {
     if (!isLevel(p.level)) throw new BadRequest('Invalid level');
     sets.push('level = ?'); values.push(p.level);
+  }
+  if (p.purpose !== undefined) {
+    if (!isPurpose(p.purpose)) throw new BadRequest('Invalid book type');
+    sets.push('purpose = ?'); values.push(p.purpose);
   }
   if (p.quiz !== undefined) {
     if (!Array.isArray(p.quiz)) throw new BadRequest('Invalid quiz');
@@ -211,6 +224,21 @@ export async function addScene(db: Db, userId: string, projectId: string): Promi
 }
 
 /** Deletes a scene and renumbers the rest so they stay 1..n. */
+/**
+ * Deletes a draft and everything in it. A book that's on Scala’s Shelf has to be taken
+ * off first, so readers never lose a book by accident.
+ */
+export async function deleteProject(db: Db, userId: string, projectId: string): Promise<void> {
+  const row = await ownProject(db, userId, projectId);
+  if (row.status === 'published') throw new BadRequest('Take this book off Scala’s Shelf before deleting it.');
+  await db.batch([
+    db.prepare(`DELETE FROM jobs WHERE project_id = ?`).bind(projectId),
+    db.prepare(`DELETE FROM scenes WHERE project_id = ?`).bind(projectId),
+    db.prepare(`DELETE FROM books WHERE project_id = ?`).bind(projectId),
+    db.prepare(`DELETE FROM projects WHERE id = ?`).bind(projectId),
+  ]);
+}
+
 export async function deleteScene(db: Db, userId: string, sceneId: string): Promise<void> {
   const scene = await db.prepare(`SELECT project_id FROM scenes WHERE id = ?`).bind(sceneId).first<{ project_id: string }>();
   if (!scene) throw new NotFound('Scene not found');
@@ -233,15 +261,15 @@ async function publishPackage(db: Db, project: ProjectRow, pkg: Package, reviewe
   const ts = now();
   await db.batch([
     db.prepare(
-      `INSERT INTO books (id, project_id, creator_id, title, description, level, reading_level, cover_url, manifest, published_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO books (id, project_id, creator_id, title, description, level, purpose, reading_level, cover_url, manifest, published_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (project_id) DO UPDATE SET
-         title = excluded.title, description = excluded.description, level = excluded.level,
+         title = excluded.title, description = excluded.description, level = excluded.level, purpose = excluded.purpose,
          reading_level = excluded.reading_level, cover_url = excluded.cover_url,
          manifest = excluded.manifest, updated_at = excluded.updated_at`
     ).bind(
       crypto.randomUUID(), project.id, project.creator_id, project.title, project.description, project.level,
-      readingLevel(project.level), firstBg, JSON.stringify(pkg), ts, ts
+      project.purpose ?? 'learning', readingLevel(project.level), firstBg, JSON.stringify(pkg), ts, ts
     ),
     db.prepare(
       `UPDATE projects SET status = 'published', review_status = 'none', pending_package = NULL, review_note = '',

@@ -15,9 +15,13 @@ export interface StaffMember {
   role: Role;
 }
 
-const TOKEN_TTL_MS = 15 * 60 * 1000;
+// A sign-in link is a random 256-bit token (unique), works once (redeeming deletes it)
+// and expires after 24 hours.
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+/** At most MAX_RECENT_LINKS links per email in this window, so nobody can flood an inbox. */
+const LINK_RATE_WINDOW_MS = 15 * 60 * 1000;
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const MAX_PENDING_LINKS = 3;
+const MAX_RECENT_LINKS = 3;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function normalizeEmail(value: unknown): string {
@@ -63,8 +67,10 @@ export async function requestSignInLink(
     db.prepare(`DELETE FROM login_tokens WHERE expires_at <= ?`).bind(now),
     db.prepare(`DELETE FROM sessions WHERE expires_at <= ?`).bind(now),
   ]);
-  const pending = await db.prepare(`SELECT COUNT(*) AS n FROM login_tokens WHERE email = ?`).bind(email).first<{ n: number }>();
-  if ((pending?.n ?? 0) >= MAX_PENDING_LINKS) {
+  // Links issued in the last 15 minutes (a link's issue time is its expiry minus the TTL).
+  const recent = await db.prepare(`SELECT COUNT(*) AS n FROM login_tokens WHERE email = ? AND expires_at > ?`)
+    .bind(email, now + TOKEN_TTL_MS - LINK_RATE_WINDOW_MS).first<{ n: number }>();
+  if ((recent?.n ?? 0) >= MAX_RECENT_LINKS) {
     throw new BadRequest('Too many sign-in links requested. Use the latest email, or try again in 15 minutes.');
   }
 
@@ -78,8 +84,8 @@ export async function requestSignInLink(
     await mailer.send({
       to: email,
       subject: 'Your Scala’s Shelf sign-in link',
-      text: `Hi ${member.name || 'there'},\n\nSign in to the Scala’s Shelf Studio:\n\n${link}\n\nThis link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.`,
-      html: `<p>Hi ${escapeHtml(member.name || 'there')},</p><p><a href="${link}">Sign in to the Scala’s Shelf Studio</a></p><p>This link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.</p>`,
+      text: `Hi ${member.name || 'there'},\n\nSign in to the Scala’s Shelf Studio:\n\n${link}\n\nThis link works once and expires in 24 hours. If you didn't ask for it, ignore this email.`,
+      html: `<p>Hi ${escapeHtml(member.name || 'there')},</p><p><a href="${link}">Sign in to the Scala’s Shelf Studio</a></p><p>This link works once and expires in 24 hours. If you didn't ask for it, ignore this email.</p>`,
     });
   } catch (error) {
     console.error('Sign-in email failed:', error);

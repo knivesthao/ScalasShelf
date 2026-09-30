@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LEVELS, buildPackage, buildVocab, publishChecklist, validatePackage, type Level, type Package } from '@/lib/format';
+import { buildPackage, buildVocab, publishChecklist, validatePackage, type Package } from '@/lib/format';
 import { FEATURES } from '@/lib/features';
 import { cloudActive } from '@/lib/studioStore';
 import { wordsAboveLevel } from '@/lib/levels';
@@ -8,13 +8,12 @@ import type { StudioProject, StudioScene } from './useStudioProject';
 interface PublishTabProps {
   project: StudioProject;
   scenes: StudioScene[];
-  onUpdate: (fields: Partial<Pick<StudioProject, 'title' | 'description' | 'level'>>) => void;
   onSubmit: (pkg: Package) => Promise<void>;
   onUnpublish: () => Promise<void>;
   onJumpToScene: (index: number) => void;
 }
 
-export function PublishTab({ project, scenes, onUpdate, onSubmit, onUnpublish, onJumpToScene }: PublishTabProps) {
+export function PublishTab({ project, scenes, onSubmit, onUnpublish, onJumpToScene }: PublishTabProps) {
   const [problems, setProblems] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,11 +23,14 @@ export function PublishTab({ project, scenes, onUpdate, onSubmit, onUnpublish, o
     ...drafts.flatMap((d) => d.bubbles.map((b) => b.speaker)),
     ...buildVocab(drafts).map((v) => v.headword),
   ];
-  const issues = publishChecklist(settings, drafts, project.quiz, (text) => wordsAboveLevel(text, project.level, allowed), {
+  // Reading books have no level or quiz, so skip those checks.
+  const learning = project.purpose !== 'reading';
+  const issues = publishChecklist(settings, drafts, project.quiz, (text) => (learning ? wordsAboveLevel(text, project.level, allowed) : []), {
     art: FEATURES.rendering,
     audio: FEATURES.rendering,
-  });
+  }).filter((i) => learning || !i.message.startsWith('Quiz has'));
   const errors = issues.filter((i) => i.level === 'error');
+
   const warnings = issues.filter((i) => i.level === 'warning');
 
   async function submit() {
@@ -54,24 +56,6 @@ export function PublishTab({ project, scenes, onUpdate, onSubmit, onUnpublish, o
 
   return (
     <div className="publish-tab">
-      <section className="studio-section">
-        <h2>Episode details</h2>
-        <label className="inspector-field">
-          Title
-          <input value={project.title} onChange={(e) => onUpdate({ title: e.target.value })} />
-        </label>
-        <label className="inspector-field">
-          Short description (shown in the library)
-          <textarea rows={2} value={project.description} onChange={(e) => onUpdate({ description: e.target.value })} />
-        </label>
-        <label className="inspector-field">
-          Level
-          <select value={project.level} onChange={(e) => onUpdate({ level: e.target.value as Level })}>
-            {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
-          </select>
-        </label>
-      </section>
-
       <section className="studio-section">
         <h2>Checklist</h2>
         {issues.length === 0 && <p className="check-ok">✓ Everything looks ready.</p>}
@@ -125,7 +109,7 @@ export function PublishTab({ project, scenes, onUpdate, onSubmit, onUnpublish, o
             )}
             {project.status === 'published' && (
               <button className="ghost-btn" onClick={() => onUnpublish().catch((e: Error) => setProblems([e.message]))}>
-                Take out of the library
+                Take off Scala’s Shelf
               </button>
             )}
           </div>

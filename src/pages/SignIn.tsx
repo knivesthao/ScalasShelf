@@ -45,7 +45,7 @@ export function SignIn() {
     <div className="sign-in">
       <header className="library-header">
         <h1>Staff sign-in</h1>
-        <Link to="/">← Library</Link>
+        <Link to="/">← Scala’s Shelf</Link>
       </header>
 
       {state === 'verifying' && <div className="loading">Signing you in…</div>}
@@ -53,7 +53,7 @@ export function SignIn() {
       {state === 'sent' && (
         <div className="sign-in-card">
           <h2>Check your email</h2>
-          <p>We sent a sign-in link to <strong>{email.trim().toLowerCase()}</strong>. It works once and expires in 15 minutes.</p>
+          <p>We sent a sign-in link to <strong>{email.trim().toLowerCase()}</strong>. It works once and expires in 24 hours.</p>
           {devLink && (
             <p className="hint">Local development: <a href={devLink}>open the sign-in link</a></p>
           )}

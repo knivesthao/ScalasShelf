@@ -12,6 +12,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
+// The web app is a prototype; the real app will be a mobile app. Stop the browser
+// offering to install it to the home screen.
+window.addEventListener('beforeinstallprompt', (e) => e.preventDefault());
+
 // Cache the app itself so saved books open with no internet. Production only: in
 // development the service worker would fight Vite's hot reload.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

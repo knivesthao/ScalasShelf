@@ -1,6 +1,9 @@
 import { Hono, type Context } from 'hono';
 import { BadRequest, Forbidden, NotFound, Unauthorized } from './errors';
 import { SESSION_COOKIE, readCookie, type Platform } from './platform';
+import {
+  finishStory, suggestDescription, suggestFromIdea, type DescribeInput, type FinishInput, type IdeaInput,
+} from './services/ai';
 import { getBook, listBooks } from './services/books';
 import { claimNextJob, finishJob, getJob, queueJob } from './services/jobs';
 import {
@@ -8,7 +11,7 @@ import {
   upsertStaff, SESSION_TTL_MS,
 } from './services/staff';
 import {
-  addScene, approveProject, assertOwnsProject, createProject, deleteScene, getProject, getReviewItem,
+  addScene, approveProject, assertOwnsProject, createProject, deleteProject, deleteScene, getProject, getReviewItem,
   listProjects, listReviewQueue, requestChanges, saveProject, submitForReview, unpublishProject, type SaveInput,
 } from './services/studio';
 import type { Package } from '../../src/lib/format';
@@ -107,6 +110,20 @@ export function createApp(platform: Platform) {
 
   // ---- Studio (staff) ----
 
+  // AI suggestions for the Publish tab. Staff only, so the free AI allowance can't be drained.
+  app.post('/studio/suggest/description', async (c) => {
+    await requireStaff(c);
+    return c.json(await suggestDescription(platform.text, await body<DescribeInput>(c)));
+  });
+  app.post('/studio/suggest/finish', async (c) => {
+    await requireStaff(c);
+    return c.json(await finishStory(platform.text, await body<FinishInput>(c)));
+  });
+  app.post('/studio/suggest/idea', async (c) => {
+    await requireStaff(c);
+    return c.json(await suggestFromIdea(platform.text, await body<IdeaInput>(c)));
+  });
+
   app.get('/studio/projects', async (c) => c.json(await listProjects(db, await requireStaff(c))));
   app.post('/studio/projects', async (c) => c.json(await createProject(db, await requireStaff(c), await body(c)), 201));
   app.get('/studio/projects/:id', async (c) => c.json(await getProject(db, await requireStaff(c), c.req.param('id'))));
@@ -115,6 +132,10 @@ export function createApp(platform: Platform) {
     return c.json({ ok: true });
   });
   app.post('/studio/projects/:id/scenes', async (c) => c.json(await addScene(db, await requireStaff(c), c.req.param('id')), 201));
+  app.delete('/studio/projects/:id', async (c) => {
+    await deleteProject(db, await requireStaff(c), c.req.param('id'));
+    return c.json({ ok: true });
+  });
   app.delete('/studio/scenes/:id', async (c) => {
     await deleteScene(db, await requireStaff(c), c.req.param('id'));
     return c.json({ ok: true });
