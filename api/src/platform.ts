@@ -48,11 +48,18 @@ export interface Mailer {
   development?: boolean;
 }
 
+/** What a model returns: the text, and token counts when the provider reports them. */
+export interface Completion {
+  text: string;
+  inputTokens?: number;
+  outputTokens?: number;
+}
+
 /** A text-generation model. services/ai.ts decides which task uses which model. */
 export interface TextModel {
   /** Provider and model id, for logs and usage tracking, e.g. "workers-ai/@cf/meta/llama-3.1-8b-instruct". */
   name: string;
-  complete(system: string, prompt: string, maxTokens: number): Promise<string>;
+  complete(system: string, prompt: string, maxTokens: number): Promise<Completion>;
 }
 
 export interface Platform {

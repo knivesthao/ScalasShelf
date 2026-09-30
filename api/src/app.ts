@@ -2,7 +2,7 @@ import { Hono, type Context } from 'hono';
 import { BadRequest, Forbidden, NotFound, Unauthorized } from './errors';
 import { SESSION_COOKIE, readCookie, type Platform } from './platform';
 import {
-  finishStory, suggestDescription, suggestFromIdea, type DescribeInput, type FinishInput, type IdeaInput,
+  aiUsage, finishStory, metered, suggestDescription, suggestFromIdea, type DescribeInput, type FinishInput, type IdeaInput,
 } from './services/ai';
 import { getBook, listBooks } from './services/books';
 import { bookStats, recordEvents, type EventBatch } from './services/events';
@@ -115,17 +115,22 @@ export function createApp(platform: Platform) {
   // ---- Studio (staff) ----
 
   // AI suggestions for the Publish tab. Staff only, so the free AI allowance can't be drained.
+  // Every AI call is recorded in ai_usage (services/ai.ts → metered).
+  const projectIdOf = (input: { project_id?: unknown }) => (typeof input?.project_id === 'string' ? input.project_id : null);
   app.post('/studio/suggest/description', async (c) => {
-    await requireStaff(c);
-    return c.json(await suggestDescription(platform.text, await body<DescribeInput>(c)));
+    const userId = await requireStaff(c);
+    const input = await body<DescribeInput>(c);
+    const model = metered(platform.text, db, { task: 'describe', userId, projectId: projectIdOf(input) });
+    return c.json(await suggestDescription(model, input));
   });
   app.post('/studio/suggest/finish', async (c) => {
-    await requireStaff(c);
-    return c.json(await finishStory(platform.text, await body<FinishInput>(c)));
+    const userId = await requireStaff(c);
+    const input = await body<FinishInput>(c);
+    return c.json(await finishStory(metered(platform.text, db, { task: 'finish', userId, projectId: projectIdOf(input) }), input));
   });
   app.post('/studio/suggest/idea', async (c) => {
-    await requireStaff(c);
-    return c.json(await suggestFromIdea(platform.text, await body<IdeaInput>(c)));
+    const userId = await requireStaff(c);
+    return c.json(await suggestFromIdea(metered(platform.text, db, { task: 'idea', userId }), await body<IdeaInput>(c)));
   });
 
   app.get('/studio/projects', async (c) => c.json(await listProjects(db, await requireStaff(c))));
@@ -184,6 +189,10 @@ export function createApp(platform: Platform) {
     await requireRole(db, userId, []);
     return userId;
   };
+  app.get('/admin/ai-usage', async (c) => {
+    await requireAdmin(c);
+    return c.json(await aiUsage(db, c.req.query('since')));
+  });
   app.get('/admin/stats', async (c) => {
     await requireAdmin(c);
     return c.json(await bookStats(db, c.req.query('since')));

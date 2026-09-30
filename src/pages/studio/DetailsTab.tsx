@@ -36,7 +36,7 @@ export function DetailsTab({ project, scenes, onUpdate, onScalaFinish }: Details
     setWriting(true);
     setAiError(null);
     try {
-      const { description } = await suggestDescription(project.title, project.level, drafts);
+      const { description } = await suggestDescription(project.id, project.title, project.level, drafts);
       if (!auto || !latest.current.trim()) onUpdate({ description });
     } catch (e) {
       setAiError((e as Error).message || 'Scala couldn’t write a description. Try again.');

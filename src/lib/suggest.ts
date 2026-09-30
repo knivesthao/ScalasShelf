@@ -30,8 +30,9 @@ export function suggestLevel(drafts: SceneDraft[], allowed: string[]): Level | n
   return ORDER[ORDER.indexOf(checked[checked.length - 1]) + 1] ?? 'B2';
 }
 
-export function suggestDescription(title: string, level: Level, drafts: SceneDraft[]) {
+export function suggestDescription(projectId: string, title: string, level: Level, drafts: SceneDraft[]) {
   return api.post<{ description: string; source: 'ai' | 'rules' }>('/studio/suggest/description', {
+    project_id: projectId,
     title,
     level,
     lines: storyLines(drafts),

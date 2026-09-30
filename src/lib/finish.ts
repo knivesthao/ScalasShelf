@@ -24,12 +24,13 @@ export const sceneWritten = (d: SceneDraft) => d.bubbles.some((b) => b.text.en.t
 const DEFAULT_SCENES = 6;
 
 export function requestFinish(
-  book: { title: string; description: string; purpose: 'learning' | 'reading'; level: Level; cast: Cast },
+  book: { id: string; title: string; description: string; purpose: 'learning' | 'reading'; level: Level; cast: Cast },
   drafts: SceneDraft[],
 ) {
   const written = drafts.filter(sceneWritten);
   const name = (list: CastMember[], id?: string) => list.find((m) => m.id === id)?.name ?? '';
   return api.post<FinishResult>('/studio/suggest/finish', {
+    project_id: book.id,
     title: book.title,
     description: book.description,
     purpose: book.purpose,

@@ -57,3 +57,23 @@ describe('reading events', () => {
     ]);
   });
 });
+
+describe('AI usage', () => {
+  it('records each Scala call with its task, book and tokens, for admins to see', async () => {
+    const { db, raw } = await testApi();
+    const { metered, suggestDescription, aiUsage } = await import('./services/ai');
+    const fake = { name: 'fake/model', complete: async () => ({ text: 'Noy and her buffalo are late for school.', inputTokens: 120, outputTokens: 12 }) };
+    const model = metered(fake, db, { task: 'describe', userId: 'demo-creator', projectId: 'draft-1' });
+    const out = await suggestDescription(model, { title: 'Noy', level: 'A1', lines: ['Noy: Come on!'] });
+    expect(out).toEqual({ description: 'Noy and her buffalo are late for school.', source: 'ai' });
+
+    const failing = metered({ name: 'fake/model', complete: async () => { throw new Error('down'); } }, db, { task: 'describe', userId: 'demo-creator', projectId: 'draft-1' });
+    await suggestDescription(failing, { title: 'Noy', level: 'A1', lines: ['Noy: Come on!'] }); // falls back to rules
+
+    expect(raw.prepare(`SELECT task, model, project_id, input_tokens, output_tokens, ok FROM ai_usage ORDER BY id`).all()).toEqual([
+      { task: 'describe', model: 'fake/model', project_id: 'draft-1', input_tokens: 120, output_tokens: 12, ok: 1 },
+      { task: 'describe', model: 'fake/model', project_id: 'draft-1', input_tokens: null, output_tokens: null, ok: 0 },
+    ]);
+    expect((await aiUsage(db)).rows).toMatchObject([{ project_id: 'draft-1', task: 'describe', calls: 2, failed: 1, input_tokens: 120 }]);
+  });
+});

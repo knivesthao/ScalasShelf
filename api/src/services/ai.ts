@@ -5,7 +5,7 @@
 // AI output is always a draft: the writer can edit it and a reviewer checks every book.
 
 import { BadRequest } from '../errors';
-import type { TextModel } from '../platform';
+import type { Db, TextModel } from '../platform';
 
 /** Workers AI's binding: env.AI.run(model, input). */
 export interface WorkersAi {
@@ -22,13 +22,84 @@ export function workersAiText(ai: WorkersAi, model = WORKERS_AI_TEXT_MODEL): Tex
         messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
         max_tokens: maxTokens,
         temperature: 0.4,
-      })) as { response?: string };
-      return out.response ?? '';
+      })) as { response?: string; usage?: { prompt_tokens?: number; completion_tokens?: number } };
+      return { text: out.response ?? '', inputTokens: out.usage?.prompt_tokens, outputTokens: out.usage?.completion_tokens };
     },
   };
 }
 
+// ---- Usage tracking ----
+
+export type AiTask = 'describe' | 'idea' | 'finish';
+
+/**
+ * Wraps a model so every call is recorded in ai_usage (task, model, book, tokens, time,
+ * success). Recording never breaks the call: a failed insert is only logged.
+ */
+export function metered(
+  model: TextModel | undefined, db: Db, context: { task: AiTask; userId: string; projectId?: string | null },
+): TextModel | undefined {
+  if (!model) return undefined;
+  const record = async (started: number, ok: boolean, result?: { inputTokens?: number; outputTokens?: number }) => {
+    try {
+      await db.prepare(
+        `INSERT INTO ai_usage (task, model, project_id, user_id, input_tokens, output_tokens, ms, ok, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        context.task, model.name, context.projectId ?? null, context.userId,
+        result?.inputTokens ?? null, result?.outputTokens ?? null, Date.now() - started, ok ? 1 : 0, new Date().toISOString(),
+      ).run();
+    } catch (e) {
+      console.error('Could not record AI usage', e);
+    }
+  };
+  return {
+    name: model.name,
+    async complete(system, prompt, maxTokens) {
+      const started = Date.now();
+      try {
+        const result = await model.complete(system, prompt, maxTokens);
+        await record(started, true, result);
+        return result;
+      } catch (e) {
+        await record(started, false);
+        throw e;
+      }
+    },
+  };
+}
+
+export interface UsageRow {
+  project_id: string | null;
+  title: string | null;
+  task: string;
+  model: string;
+  calls: number;
+  failed: number;
+  input_tokens: number;
+  output_tokens: number;
+}
+
+/**
+ * AI use per book and task for admins. Token counts only: prices change, so cost is
+ * worked out from the provider's current rates when a report is made.
+ */
+export async function aiUsage(db: Db, since?: string): Promise<{ since: string | null; rows: UsageRow[] }> {
+  const from = since && Number.isFinite(Date.parse(since)) ? new Date(since).toISOString() : null;
+  const stmt = db.prepare(
+    `SELECT u.project_id, p.title, u.task, u.model, COUNT(*) AS calls, SUM(1 - u.ok) AS failed,
+       COALESCE(SUM(u.input_tokens), 0) AS input_tokens, COALESCE(SUM(u.output_tokens), 0) AS output_tokens
+     FROM ai_usage u LEFT JOIN projects p ON p.id = u.project_id
+     ${from ? 'WHERE u.created_at >= ?' : ''}
+     GROUP BY u.project_id, u.task, u.model ORDER BY calls DESC`
+  );
+  const { results } = await (from ? stmt.bind(from) : stmt).all<UsageRow>();
+  return { since: from, rows: results };
+}
+
 export interface DescribeInput {
+  /** The Studio project, for usage tracking. */
+  project_id?: string;
   title: string;
   level: string;
   /** The story's text in reading order: captions and speech lines, "Speaker: line". */
@@ -83,7 +154,7 @@ export async function suggestDescription(model: TextModel | undefined, raw: Desc
     'Maximum 20 words. Reply with the sentence only.';
   const prompt = `Title: ${input.title || '(untitled)'}\n\nStory:\n${story}`;
   try {
-    const description = cleanDescription(await model.complete(system, prompt, 80));
+    const description = cleanDescription((await model.complete(system, prompt, 80)).text);
     return description ? { description, source: 'ai' } : rulesVersion;
   } catch (e) {
     console.error(`AI description failed (${model.name})`, e);
@@ -149,7 +220,7 @@ export async function suggestFromIdea(model: TextModel | undefined, raw: IdeaInp
     'Reply with JSON only: {"description": "...", "level": "A1"}' + (purpose === 'learning' ? '' : ' with "level": null') + '.';
   const prompt = `Title: ${title || '(untitled)'}\n\nThe writer's idea:\n${idea}`;
   try {
-    const answer = parseIdeaAnswer(await model.complete(system, prompt, 160));
+    const answer = parseIdeaAnswer((await model.complete(system, prompt, 160)).text);
     if (!answer.description) return rules;
     return { description: answer.description, level: purpose === 'learning' ? answer.level ?? 'A1' : null, source: 'ai' };
   } catch (e) {
@@ -161,6 +232,7 @@ export async function suggestFromIdea(model: TextModel | undefined, raw: IdeaInp
 // ---- Finish the book: AI writes the rest of the story ----
 
 export interface FinishInput {
+  project_id?: string;
   title: string;
   description: string;
   purpose: 'learning' | 'reading';
@@ -274,7 +346,7 @@ export async function finishStory(model: TextModel | undefined, raw: FinishInput
   // Small models sometimes return broken JSON; one retry is usually enough.
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      return parseFinishAnswer(await model.complete(system, prompt, 2000), purpose);
+      return parseFinishAnswer((await model.complete(system, prompt, 2000)).text, purpose);
     } catch (e) {
       lastError = e;
     }
