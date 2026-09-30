@@ -5,6 +5,7 @@ import {
   finishStory, suggestDescription, suggestFromIdea, type DescribeInput, type FinishInput, type IdeaInput,
 } from './services/ai';
 import { getBook, listBooks } from './services/books';
+import { bookStats, recordEvents, type EventBatch } from './services/events';
 import { claimNextJob, finishJob, getJob, queueJob } from './services/jobs';
 import {
   endSession, getStaff, listStaff, redeemSignInLink, removeStaff, requestSignInLink, requireRole,
@@ -77,6 +78,9 @@ export function createApp(platform: Platform) {
   app.get('/health', (c) => c.json({ ok: true }));
 
   // ---- Library (public: reading needs no account) ----
+
+  // Reading events from the app (anonymous; see services/events.ts). No sign-in: readers never have one.
+  app.post('/events', async (c) => c.json(await recordEvents(db, await body<EventBatch>(c))));
 
   app.get('/books', async (c) => c.json(await listBooks(db, { level: c.req.query('level') })));
   app.get('/books/:id', async (c) => c.json(await getBook(db, c.req.param('id'))));
@@ -180,6 +184,10 @@ export function createApp(platform: Platform) {
     await requireRole(db, userId, []);
     return userId;
   };
+  app.get('/admin/stats', async (c) => {
+    await requireAdmin(c);
+    return c.json(await bookStats(db, c.req.query('since')));
+  });
   app.get('/admin/staff', async (c) => {
     await requireAdmin(c);
     return c.json(await listStaff(db));

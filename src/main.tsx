@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { startEventSync } from './lib/events';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -11,6 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
+// Anonymous reading events, queued on the phone and sent when online (src/lib/events.ts).
+startEventSync();
 
 // The web app is a prototype; the real app will be a mobile app. Stop the browser
 // offering to install it to the home screen.

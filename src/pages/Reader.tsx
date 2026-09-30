@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ComicView } from '@/components/ComicView';
 import { loadBook, type Book } from '@/lib/books';
 import type { AssetRef } from '@/lib/format';
+import { track } from '@/lib/events';
 import { addToShelf, savedImageUrls } from '@/lib/offline';
 
 // Reads a published comic (rendering in components/ComicView). Saved books load from the
@@ -38,6 +39,7 @@ export function Reader() {
         setBook(b);
         // Reading a book puts it on the reader's shelf.
         addToShelf(b).catch(() => {});
+        track('book_opened', b.id, { offline: saved });
       })
       .catch(() => setError('This book isn’t on your phone, and there’s no internet connection.'));
     return () => objectUrls.forEach((u) => URL.revokeObjectURL(u));
@@ -73,7 +75,15 @@ export function Reader() {
 
       <p className="hint reader-hint">Tap any word to see what it means.</p>
 
-      <ComicView pkg={book.package} assets={assets} still={still} footer={<Link to="/" className="ghost-btn">More books</Link>} />
+      <ComicView
+        pkg={book.package}
+        assets={assets}
+        still={still}
+        footer={<Link to="/" className="ghost-btn">More books</Link>}
+        onEnd={() => track('book_finished', book.id)}
+        onQuizFinished={(score, total) => track('quiz_finished', book.id, { score, total })}
+        onWordTapped={(word) => track('word_tapped', book.id, { word: word.slice(0, 40) })}
+      />
     </div>
   );
 }

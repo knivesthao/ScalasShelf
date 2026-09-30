@@ -27,10 +27,31 @@ interface ComicViewProps {
   still: boolean;
   /** Shown after the quiz (e.g. "More books"). */
   footer?: React.ReactNode;
+  /** The reader reached the end of the story (once). */
+  onEnd?: () => void;
+  onQuizFinished?: (score: number, total: number) => void;
+  onWordTapped?: (word: string) => void;
 }
 
-export function ComicView({ pkg, assets, still, footer }: ComicViewProps) {
+export function ComicView({ pkg, assets, still, footer, onEnd, onQuizFinished, onWordTapped }: ComicViewProps) {
   const [word, setWord] = useState<{ token: Token } | null>(null);
+  const endRef = useRef<HTMLElement>(null);
+  const endCallback = useRef(onEnd);
+  endCallback.current = onEnd;
+
+  // Reaching the end section counts as finishing the story.
+  useEffect(() => {
+    const el = endRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const seen = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        endCallback.current?.();
+        seen.disconnect();
+      }
+    });
+    seen.observe(el);
+    return () => seen.disconnect();
+  }, []);
   const { manifest, chunks, text } = pkg;
 
   const scenes: PublishedScene[] = useMemo(
@@ -57,18 +78,21 @@ export function ComicView({ pkg, assets, still, footer }: ComicViewProps) {
                 playKey={playKey}
                 onWordTap={(bubbleId, i) => {
                   const token = text.bubbles[bubbleId]?.tokens.en?.[i];
-                  if (token) setWord({ token });
+                  if (token) {
+                    setWord({ token });
+                    onWordTapped?.(token.t.trim());
+                  }
                 }}
               />
             )}
           </InView>
         ))}
 
-        <section className="reader-end">
+        <section className="reader-end" ref={endRef}>
           {text.quiz.length > 0 ? (
             <>
               <h2>Check your understanding</h2>
-              <Quiz items={text.quiz} />
+              <Quiz items={text.quiz} onFinish={onQuizFinished} />
             </>
           ) : (
             <h2>The End</h2>

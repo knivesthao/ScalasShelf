@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { bookBytes, formatBytes, loadBook, type Book } from '@/lib/books';
 import { LEVELS } from '@/lib/format';
+import { track } from '@/lib/events';
 import { addToShelf, isOnShelf, removeSavedBook, saveBookOffline } from '@/lib/offline';
 
 export function BookDetail() {
@@ -31,6 +32,7 @@ export function BookDetail() {
       await saveBookOffline(book, (done, total) => setProgress(done / total));
       setSaved(true);
       setOnShelf(true);
+      track('book_downloaded', book.id);
     } catch {
       setError('Download stopped. Try again when you have a connection; it will continue where it left off.');
     } finally {
@@ -42,6 +44,7 @@ export function BookDetail() {
     if (!book) return;
     await addToShelf(book);
     setOnShelf(true);
+    track('shelf_added', book.id);
   }
 
   async function remove() {
