@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { buildPackage, buildVocab, publishChecklist, validatePackage, type Package } from '@/lib/format';
-import { FEATURES } from '@/lib/features';
+import { bookChecklist } from '@/lib/checklist';
 import { cloudActive } from '@/lib/studioStore';
-import { wordsAboveLevel } from '@/lib/levels';
 import type { StudioProject, StudioScene } from './useStudioProject';
 
 interface PublishTabProps {
   project: StudioProject;
   scenes: StudioScene[];
-  onSubmit: (pkg: Package) => Promise<void>;
+  onSubmit: () => Promise<void>;
   onUnpublish: () => Promise<void>;
   onJumpToScene: (index: number) => void;
 }
@@ -17,33 +15,21 @@ export function PublishTab({ project, scenes, onSubmit, onUnpublish, onJumpToSce
   const [problems, setProblems] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const settings = { id: project.id, title: project.title, level: project.level };
   const drafts = scenes.map((s) => s.draft);
-  const allowed = [
-    ...drafts.flatMap((d) => d.bubbles.map((b) => b.speaker)),
-    ...buildVocab(drafts).map((v) => v.headword),
-  ];
-  // Reading books have no level or quiz, so skip those checks.
-  const learning = project.purpose !== 'reading';
-  const issues = publishChecklist(settings, drafts, project.quiz, (text) => (learning ? wordsAboveLevel(text, project.level, allowed) : []), {
-    art: FEATURES.rendering,
-    audio: FEATURES.rendering,
-  }).filter((i) => learning || !i.message.startsWith('Quiz has'));
+  // The same checks the server runs when the book is sent (src/lib/checklist.ts).
+  const issues = bookChecklist(project, drafts);
   const errors = issues.filter((i) => i.level === 'error');
 
   const warnings = issues.filter((i) => i.level === 'warning');
 
+  /** The server builds the book from what's saved, checks it again, and queues it for review. */
   async function submit() {
     setSubmitting(true);
-    const pkg = buildPackage(settings, drafts, project.quiz);
-    const found = validatePackage(pkg);
-    setProblems(found);
-    if (found.length === 0) {
-      try {
-        await onSubmit(pkg);
-      } catch (e) {
-        setProblems([(e as Error).message]);
-      }
+    setProblems([]);
+    try {
+      await onSubmit();
+    } catch (e) {
+      setProblems((e as Error).message.split('; '));
     }
     setSubmitting(false);
   }

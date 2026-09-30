@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useGenerate } from '@/hooks/useGenerate';
-import { applyFinish, requestFinish, sceneWritten } from '@/lib/finish';
+import { scalaFinish } from '@/lib/finish';
 import { FEATURES } from '@/lib/features';
 import { composeScene, putMember, removeMember, sceneCharacters, usedIn, type CastKind } from '@/lib/cast';
 import type { AssetRef, CastMember, Layer, SceneDraft } from '@/lib/format';
@@ -104,23 +104,15 @@ export function StudioEditor() {
   }
 
   /**
-   * AI writes the rest of the story. Written scenes stay as they are; empty ones are
-   * filled, then new scenes are added. Everything is a draft the writer edits.
+   * Scala writes the rest of the story on the server, which saves it; then the editor
+   * shows the updated book. Pending edits are saved first so Scala sees them.
    */
   async function finishWithAi() {
     if (!project) return;
-    const drafts = scenes.map((s) => s.draft);
-    const result = await requestFinish(project, drafts);
-    const done = applyFinish(result, project, drafts);
-    studio.updateProject({ cast: done.cast, ...(done.quiz ? { quiz: done.quiz } : {}) });
-    // Only fill a scene that is still empty: the writer may have typed into it while Scala worked.
-    done.filled.forEach((draft, i) => studio.updateScene(scenes[i].id, (current) => (sceneWritten(current) ? current : draft)));
-    for (const draft of done.added) {
-      const added = await studio.addScene();
-      if (added) studio.updateScene(added.id, () => draft);
-    }
-    const firstFilled = Math.min(...done.filled.keys());
-    setSceneIndex(Number.isFinite(firstFilled) ? firstFilled : drafts.length);
+    await studio.flush();
+    const { project: updated, scenes: all, first_new_scene } = await scalaFinish(project.id);
+    studio.replaceBook(updated, all);
+    setSceneIndex(first_new_scene);
     setTab('script');
     setConfirmFinish(false);
   }

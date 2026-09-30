@@ -64,7 +64,8 @@ export interface StudioStore {
   addScene(projectId: string): Promise<SceneData>;
   deleteScene(projectId: string, sceneId: string): Promise<void>;
   /** Sends the finished book to a reviewer. Only reviewers put books in the library. */
-  submit(id: string, pkg: Package): Promise<ProjectData>;
+  /** The server builds the book from what's saved, runs the checklist and queues it for review. */
+  submit(id: string): Promise<ProjectData>;
   unpublish(id: string): Promise<ProjectData>;
 }
 
@@ -78,7 +79,7 @@ export const serverStore: StudioStore = {
   remove: async (id) => { await api.delete(`/studio/projects/${id}`); },
   addScene: (projectId) => api.post(`/studio/projects/${projectId}/scenes`),
   deleteScene: async (_projectId, sceneId) => { await api.delete(`/studio/scenes/${sceneId}`); },
-  submit: (id, pkg) => api.post(`/studio/projects/${id}/submit`, pkg),
+  submit: (id) => api.post(`/studio/projects/${id}/submit`),
   unpublish: (id) => api.post(`/studio/projects/${id}/unpublish`),
 };
 
@@ -247,7 +248,7 @@ export const studioStore: StudioStore = {
   remove: (id) => active().remove(id),
   addScene: (projectId) => active().addScene(projectId),
   deleteScene: (projectId, sceneId) => active().deleteScene(projectId, sceneId),
-  submit: (id, pkg) => active().submit(id, pkg),
+  submit: (id) => active().submit(id),
   unpublish: (id) => active().unpublish(id),
 };
 

@@ -1,5 +1,6 @@
+import { bookChecklist } from '../../../src/lib/checklist';
 import {
-  LEVELS, emptyScene, readingLevel, validatePackage,
+  LEVELS, buildPackage, emptyScene, readingLevel, validatePackage,
   type Cast, type Level, type Package, type QuizItem, type SceneDraft,
 } from '../../../src/lib/format';
 import { BadRequest, Forbidden, NotFound } from '../errors';
@@ -223,7 +224,25 @@ export async function addScene(db: Db, userId: string, projectId: string): Promi
   return scene;
 }
 
-/** Deletes a scene and renumbers the rest so they stay 1..n. */
+/** Saves Scala Finish's result in one batch: filled scenes, new scenes, cast and quiz. */
+export async function saveFinishedBook(
+  db: Db, userId: string, projectId: string,
+  book: { cast: Cast; quiz: QuizItem[] | null; filled: { id: string; data: SceneDraft }[]; added: SceneDraft[] },
+): Promise<void> {
+  await ownProject(db, userId, projectId);
+  const last = await db.prepare(`SELECT MAX(scene_number) AS n FROM scenes WHERE project_id = ?`).bind(projectId).first<{ n: number | null }>();
+  const ts = now();
+  await db.batch([
+    ...book.filled.map((s) =>
+      db.prepare(`UPDATE scenes SET data = ?, updated_at = ? WHERE id = ? AND project_id = ?`).bind(checkScene(s.data), ts, s.id, projectId)),
+    ...book.added.map((data, i) =>
+      db.prepare(`INSERT INTO scenes (id, project_id, scene_number, data, updated_at) VALUES (?, ?, ?, ?, ?)`)
+        .bind(crypto.randomUUID(), projectId, (last?.n ?? 0) + i + 1, checkScene(data), ts)),
+    db.prepare(`UPDATE projects SET cast_json = ?, ${book.quiz ? 'quiz = ?, ' : ''}updated_at = ? WHERE id = ?`)
+      .bind(...[checkCast(book.cast), ...(book.quiz ? [JSON.stringify(book.quiz)] : []), ts, projectId]),
+  ]);
+}
+
 /**
  * Deletes a draft and everything in it. A book that's on Scala’s Shelf has to be taken
  * off first, so readers never lose a book by accident.
@@ -239,6 +258,7 @@ export async function deleteProject(db: Db, userId: string, projectId: string): 
   ]);
 }
 
+/** Deletes a scene and renumbers the rest so they stay 1..n. */
 export async function deleteScene(db: Db, userId: string, sceneId: string): Promise<void> {
   const scene = await db.prepare(`SELECT project_id FROM scenes WHERE id = ?`).bind(sceneId).first<{ project_id: string }>();
   if (!scene) throw new NotFound('Scene not found');
@@ -283,8 +303,17 @@ async function publishPackage(db: Db, project: ProjectRow, pkg: Package, reviewe
  * A creator sends a finished book for review. Nothing reaches children until a reviewer
  * approves it (child safeguarding policy: every book is checked by an adult first).
  */
-export async function submitForReview(db: Db, userId: string, projectId: string, pkg: Package): Promise<Project> {
-  await ownProject(db, userId, projectId);
+/**
+ * Sends a book for review. The package is built here from what's saved, and the same
+ * checklist the Studio shows is enforced, so the phone only edits and never assembles
+ * the book. (Older app versions still post a package; it's ignored.)
+ */
+export async function submitForReview(db: Db, userId: string, projectId: string): Promise<Project> {
+  const { project, scenes } = await getProject(db, userId, projectId);
+  const drafts = scenes.map((s) => s.data);
+  const errors = bookChecklist(project, drafts).filter((i) => i.level === 'error');
+  if (errors.length) throw new BadRequest(errors.map((i) => (i.scene ? `Scene ${i.scene}: ${i.message}` : i.message)).join('; '));
+  const pkg = buildPackage({ id: project.id, title: project.title, level: project.level }, drafts, project.quiz);
   checkPackage(projectId, pkg);
   const ts = now();
   await db.prepare(

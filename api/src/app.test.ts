@@ -121,10 +121,12 @@ describe('review before publishing', () => {
     api.raw.prepare(`DELETE FROM books WHERE project_id = 'demo-noy'`).run();
     api.raw.prepare(`UPDATE projects SET status = 'draft' WHERE id = 'demo-noy'`).run();
     const { project, scenes } = (await api.call('GET', '/studio/projects/demo-noy')).json;
+    // Save the scenes with art: the server builds the package from what's saved.
     const drafts = scenes.map((s: { data: SceneDraft }) => withArt(s.data));
+    await api.call('PUT', '/studio/projects/demo-noy', { body: { scenes: scenes.map((s: { id: string }, i: number) => ({ id: s.id, data: drafts[i] })) } });
     const pkg = buildPackage({ id: project.id, title: project.title, level: project.level }, drafts, []);
     const titles = async () => (await api.call('GET', '/books', { user: '' })).json.map((b: { title: string }) => b.title).sort();
-    return { ...api, pkg, titles };
+    return { ...api, pkg, scenes, drafts, titles };
   }
 
   it('creators can no longer publish directly', async () => {
@@ -178,12 +180,14 @@ describe('review before publishing', () => {
     expect((await call('GET', '/review/queue', { user: 'yee@admais.xyz' })).status).toBe(200);
   });
 
-  it('refuses an invalid package', async () => {
-    const { call, pkg } = await submittable();
-    pkg.manifest.editions.lite.assets = {};
-    const res = await call('POST', '/studio/projects/demo-noy/submit', { body: pkg });
+  it('builds the book itself and refuses one that fails the checklist', async () => {
+    const { call, scenes, drafts } = await submittable();
+    const broken = { ...drafts[0], bubbles: drafts[0].bubbles.map((b: SceneDraft['bubbles'][number], i: number) => (i === 0 ? { ...b, text: { en: '' } } : b)) };
+    await call('PUT', '/studio/projects/demo-noy', { body: { scenes: [{ id: scenes[0].id, data: broken }] } });
+    // Whatever package a phone sends is ignored: the server builds its own.
+    const res = await call('POST', '/studio/projects/demo-noy/submit', { body: { manifest: 'anything' } });
     expect(res.status).toBe(400);
-    expect(res.json.error).toMatch(/image bg1 is missing/);
+    expect(res.json.error).toMatch(/Scene 1: .* is empty/);
   });
 
   it('back to draft removes it from the library; reviewers can pull any book', async () => {

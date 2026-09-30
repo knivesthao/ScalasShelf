@@ -17,4 +17,5 @@ export const FEATURES = {
  * The reader-only build (`npm run build:reader`, used for the Google Play app): the library
  * and reader only, with no Studio, sign-in or review pages in the bundle.
  */
-export const READER_ONLY = import.meta.env.VITE_READER_ONLY === '1';
+// import.meta.env only exists in Vite builds; the API (a Worker) imports FEATURES too.
+export const READER_ONLY = (import.meta as { env?: Record<string, string> }).env?.VITE_READER_ONLY === '1';

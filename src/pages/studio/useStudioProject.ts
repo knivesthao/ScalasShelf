@@ -149,12 +149,20 @@ export function useStudioProject(id: string | undefined) {
     setAllScenes(scenesRef.current.filter((s) => s.id !== sceneId).map((s, i) => ({ ...s, scene_number: i + 1 })));
   }, [id, flush]);
 
-  /** Saves pending edits, then sends the book for review. The server validates the package. */
-  const submit = useCallback(async (pkg: Package) => {
+  /** Saves pending edits, then sends the book for review. The server builds and checks the package. */
+  const submit = useCallback(async () => {
     await flush();
     if (!projectRef.current) return;
-    setCurrentProject(await studioStore.submit(projectRef.current.id, pkg));
+    setCurrentProject(await studioStore.submit(projectRef.current.id));
   }, [flush]);
+
+  /** Replaces the book with a fresh copy from the server (after Scala Finish saved it there). */
+  const replaceBook = useCallback((p: StudioProject, list: SceneDto[]) => {
+    dirtyScenes.current.clear();
+    dirtyProject.current = {};
+    setCurrentProject({ ...p, cast: p.cast ?? emptyCast() });
+    setAllScenes(list.map(toScene));
+  }, []);
 
   const unpublish = useCallback(async () => {
     if (!projectRef.current) return;
@@ -163,6 +171,6 @@ export function useStudioProject(id: string | undefined) {
 
   return {
     project, scenes, loading, loadError, saveState,
-    updateProject, updateScene, addScene, deleteScene, submit, unpublish, flush,
+    updateProject, updateScene, addScene, deleteScene, submit, unpublish, flush, replaceBook,
   };
 }

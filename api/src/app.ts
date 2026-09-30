@@ -2,8 +2,9 @@ import { Hono, type Context } from 'hono';
 import { BadRequest, Forbidden, NotFound, Unauthorized } from './errors';
 import { SESSION_COOKIE, readCookie, type Platform } from './platform';
 import {
-  aiUsage, finishStory, metered, suggestDescription, suggestFromIdea, type DescribeInput, type FinishInput, type IdeaInput,
+  aiUsage, metered, suggestDescription, suggestFromIdea, type DescribeInput, type IdeaInput,
 } from './services/ai';
+import { finishProject } from './services/finish';
 import { getBook, listBooks } from './services/books';
 import { bookStats, recordEvents, type EventBatch } from './services/events';
 import { claimNextJob, finishJob, getJob, queueJob } from './services/jobs';
@@ -15,7 +16,6 @@ import {
   addScene, approveProject, assertOwnsProject, createProject, deleteProject, deleteScene, getProject, getReviewItem,
   listProjects, listReviewQueue, requestChanges, saveProject, submitForReview, unpublishProject, type SaveInput,
 } from './services/studio';
-import type { Package } from '../../src/lib/format';
 
 // Routes only: read the request, call a service, return JSON. Business rules live in
 // ./services so the framework stays swappable (docs/plans/MVP.md → Decisions → Backend).
@@ -123,10 +123,11 @@ export function createApp(platform: Platform) {
     const model = metered(platform.text, db, { task: 'describe', userId, projectId: projectIdOf(input) });
     return c.json(await suggestDescription(model, input));
   });
-  app.post('/studio/suggest/finish', async (c) => {
+  // Scala Finish: the server reads the saved book, writes the rest and saves it (services/finish.ts).
+  app.post('/studio/projects/:id/finish', async (c) => {
     const userId = await requireStaff(c);
-    const input = await body<FinishInput>(c);
-    return c.json(await finishStory(metered(platform.text, db, { task: 'finish', userId, projectId: projectIdOf(input) }), input));
+    const projectId = c.req.param('id');
+    return c.json(await finishProject(db, metered(platform.text, db, { task: 'finish', userId, projectId }), userId, projectId));
   });
   app.post('/studio/suggest/idea', async (c) => {
     const userId = await requireStaff(c);
@@ -151,7 +152,7 @@ export function createApp(platform: Platform) {
   });
   // Creators submit; only reviewers publish (every book is checked by an adult first).
   app.post('/studio/projects/:id/submit', async (c) =>
-    c.json(await submitForReview(db, await requireStaff(c), c.req.param('id'), await body<Package>(c))));
+    c.json(await submitForReview(db, await requireStaff(c), c.req.param('id'))));
   app.post('/studio/projects/:id/unpublish', async (c) => {
     const userId = await requireStaff(c);
     const member = await getStaff(db, userId);
