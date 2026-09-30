@@ -59,7 +59,7 @@ export async function flushEvents(beacon = false): Promise<void> {
   if (!queue.length) return;
   const batch = queue.slice(0, BATCH);
   const body = JSON.stringify({ device_id: deviceId(), app_version: APP_VERSION, events: batch });
-  const url = `${API_ORIGIN}/api/events`;
+  const url = `${API_ORIGIN}/api/v1/events`;
 
   if (beacon && navigator.sendBeacon) {
     if (navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }))) {

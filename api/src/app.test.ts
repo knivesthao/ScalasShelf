@@ -31,6 +31,15 @@ describe('library (public)', () => {
     expect((await call('GET', '/books?level=A1')).json).toHaveLength(2);
   });
 
+  it('answers on /api/v1 and on the older /api paths', async () => {
+    const { app } = await testApi();
+    const v1 = await app.request('/api/v1/books');
+    const legacy = await app.request('/api/books');
+    expect(v1.status).toBe(200);
+    expect(await v1.json()).toEqual(await legacy.json());
+    expect((await app.request('/api/v1/nope')).status).toBe(404);
+  });
+
   it('is empty without the demo seed', async () => {
     const { call } = await testApi({ seed: false });
     expect((await call('GET', '/books')).json).toEqual([]);

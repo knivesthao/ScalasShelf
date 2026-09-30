@@ -1,4 +1,4 @@
-// Client for the Scala’s Shelf API (api/). Same-origin /api by default: the Vite dev
+// Client for the Scala’s Shelf API (api/), version 1 (/api/v1). Same-origin by default: the Vite dev
 // server in development, the Cloudflare Worker in production. A mobile app build sets
 // VITE_API_URL to the deployed site, since the app itself isn't served from there.
 
@@ -23,7 +23,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   let res: Response;
   try {
-    res = await fetch(`${API_ORIGIN}/api${path}`, { method, headers, body: payload, credentials: 'same-origin' });
+    res = await fetch(`${API_ORIGIN}/api/v1${path}`, { method, headers, body: payload, credentials: 'same-origin' });
   } catch {
     throw new ApiError(0, 'No connection. Your changes will be saved when you’re back online.');
   }

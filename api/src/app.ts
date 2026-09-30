@@ -59,7 +59,7 @@ export function createApp(platform: Platform) {
     await requireRole(db, userId, ['creator', 'reviewer']);
     return userId;
   };
-  const app = new Hono<Env>().basePath('/api');
+  const app = new Hono<Env>();
 
   app.onError((err, c) => {
     if (err instanceof BadRequest) return c.json({ error: err.message }, 400);
@@ -268,6 +268,12 @@ export function createApp(platform: Platform) {
     return c.json({ ok: true });
   });
 
-  app.notFound((c) => c.json({ error: 'Not found' }, 404));
-  return app;
+  // Versioned for the mobile app: an installed app can't be updated instantly, so /api/v1
+  // must keep working when /api/v2 arrives. The bare /api paths are the same routes, kept
+  // for the web app and GPU worker deployed before versioning; new clients use /api/v1.
+  const root = new Hono<Env>();
+  root.route('/api/v1', app);
+  root.route('/api', app);
+  root.notFound((c) => c.json({ error: 'Not found' }, 404));
+  return root;
 }
