@@ -87,7 +87,8 @@ describe('word meanings', () => {
     };
     const result = await fillMeanings(db, [{ model, attempts: 1 }], 'demo-creator', 'demo-noy');
     expect(prompts).toHaveLength(1); // one request for the whole book
-    expect(prompts[0]).not.toMatch(/buffalo/); // already in the dictionary
+    // "buffalo" is already in the dictionary, so it isn't one of the numbered words asked about.
+    expect(prompts[0]).not.toMatch(/^\d+\. buffalo /m);
     expect(result.from_dictionary).toBe(1);
     expect(result.missing).toEqual([]);
 

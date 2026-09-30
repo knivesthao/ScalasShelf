@@ -6,10 +6,11 @@
 // AI (binding AI, Workers AI) writes Studio suggestions; see services/ai.ts.
 
 import { createApp } from './app';
-import { workersAiText, type WorkersAi } from './services/ai';
-import { aiRouter } from './services/ai-routes';
+import type { WorkersAi } from './services/ai';
+import { aiRouter, routesFrom, type AiRouter } from './services/ai-routes';
+import { PROVIDERS, buildProviders } from './services/providers';
 import { languageTool } from './services/spelling';
-import { flushTranslations, googleTranslate, translationUsage } from './services/translation';
+import { flushTranslations, translationUsage } from './services/translation';
 import { noMailer, resendMailer, sessionAuth, type Db, type FileStore } from './platform';
 import { sessionEmail } from './services/staff';
 
@@ -27,8 +28,17 @@ interface Bindings {
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   AI?: WorkersAi;
-  /** Google Cloud Translation API key (secret), restricted to the Translation API. */
-  GOOGLE_TRANSLATE_KEY?: string;
+  /** Optional JSON overriding which model does which job (services/ai-routes.ts). */
+  AI_ROUTES?: string;
+  /** Provider keys (secrets), by the names in services/providers.ts, e.g. GOOGLE_TRANSLATE_KEY. */
+  [secret: string]: unknown;
+}
+
+/** The AI router for this request: built providers that have their keys, and the routes. */
+function router(env: Bindings): AiRouter {
+  const names = PROVIDERS.flatMap((p) => [p.secret, ...(p.extra ?? [])]).filter((n): n is string => !!n);
+  const secrets = Object.fromEntries(names.map((n) => [n, typeof env[n] === 'string' ? (env[n] as string) : undefined]));
+  return aiRouter(buildProviders({ ai: env.AI, secrets }), routesFrom(env.AI_ROUTES));
 }
 
 /** Until R2 is enabled: uploads fail with a clear message, everything else works. */
@@ -52,7 +62,7 @@ function r2Store(bucket: R2Like): FileStore {
 export default {
   /** Every 5 minutes (wrangler.toml → triggers): translate whatever is still in the queue. */
   scheduled(_event: unknown, env: Bindings, ctx: { waitUntil(p: Promise<unknown>): void }) {
-    const translator = env.GOOGLE_TRANSLATE_KEY ? googleTranslate(env.GOOGLE_TRANSLATE_KEY) : undefined;
+    const translator = router(env).translator();
     ctx.waitUntil(flushTranslations(env.DB, translator, translationUsage(env.DB, translator)));
   },
 
@@ -66,10 +76,9 @@ export default {
         ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM ?? 'Scala’s Shelf <noreply@admais.xyz>')
         : noMailer,
       workerSecret: env.WORKER_SECRET,
-      // Each AI job's model: services/ai-routes.ts. Claude joins once its provider is set up.
-      ai: aiRouter({ ...(env.AI ? { 'workers-ai': (model: string) => workersAiText(env.AI!, model) } : {}) }),
+      // Each job's model and provider: services/ai-routes.ts and services/providers.ts.
+      ai: router(env),
       spelling: languageTool(),
-      translator: env.GOOGLE_TRANSLATE_KEY ? googleTranslate(env.GOOGLE_TRANSLATE_KEY) : undefined,
       // Background jobs (Scala Finish) keep running after the response is sent.
       background: (task) => (ctx as { waitUntil(p: Promise<unknown>): void }).waitUntil(task),
     });

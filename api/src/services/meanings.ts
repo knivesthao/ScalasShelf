@@ -23,16 +23,22 @@ const MEANINGS_SCHEMA = {
   required: ['meanings'],
 };
 
-/** The taught words (tokens marked as new words), with the meaning the writer gave, if any. */
-function taughtWords(drafts: SceneDraft[]): Map<string, { meaning: string; example: string }> {
-  const words = new Map<string, { meaning: string; example: string }>();
+/**
+ * The taught words, grouped the way the Review check groups them (by vocab id, first
+ * occurrence decides, as buildVocab in src/lib/format.ts). `meaning` is the first
+ * occurrence's meaning (what the check looks at); `typed` is any meaning the writer typed on
+ * any occurrence, which is copied to the others before asking the dictionary or AI.
+ */
+function taughtWords(drafts: SceneDraft[]): Map<string, { word: string; meaning: string; typed: string; example: string }> {
+  const words = new Map<string, { word: string; meaning: string; typed: string; example: string }>();
   for (const d of drafts) {
     for (const b of d.bubbles) {
       for (const t of b.tokens.en ?? []) {
         if (!t.v) continue;
-        const word = bareWord(t.t);
-        const known = words.get(word);
-        if (!known || (!known.meaning && t.gloss)) words.set(word, { meaning: (t.gloss ?? '').trim(), example: b.text.en });
+        const gloss = (t.gloss ?? '').trim();
+        const known = words.get(t.v);
+        if (!known) words.set(t.v, { word: bareWord(t.t), meaning: gloss, typed: gloss, example: b.text.en });
+        else if (!known.typed && gloss) known.typed = gloss;
       }
     }
   }
@@ -80,24 +86,27 @@ export async function fillMeanings(
   const now = new Date().toISOString();
 
   // 1. What the writer typed becomes part of the shared dictionary.
-  const typed = [...words].filter(([, w]) => w.meaning);
+  const typed = [...words.values()].filter((w) => w.typed);
   if (typed.length) {
-    await db.batch(typed.map(([word, w]) =>
+    await db.batch(typed.map((w) =>
       db.prepare(`INSERT OR IGNORE INTO word_meanings (word, level, meaning, source, created_at) VALUES (?, ?, ?, 'writer', ?)`)
-        .bind(word, level, w.meaning.slice(0, 120), now)));
+        .bind(w.word, level, w.typed.slice(0, 120), now)));
   }
 
-  // 2. Missing meanings from the dictionary.
-  const need = [...words].filter(([, w]) => !w.meaning).map(([word, w]) => ({ word, example: w.example }));
+  // 2. Words whose first occurrence has no meaning: the writer's own meaning from another
+  // occurrence first, then the dictionary.
+  const need = [...words.values()].filter((w) => !w.meaning).map((w) => ({ word: w.word, example: w.example }));
   const meanings = new Map<string, string>();
+  for (const w of words.values()) if (!w.meaning && w.typed) meanings.set(w.word, w.typed);
+  const fromWriter = meanings.size;
   for (let i = 0; i < need.length; i += 50) {
     const chunk = need.slice(i, i + 50).map((n) => n.word);
     const { results } = await db.prepare(
       `SELECT word, meaning FROM word_meanings WHERE level = ? AND word IN (${chunk.map(() => '?').join(', ')})`
     ).bind(level, ...chunk).all<{ word: string; meaning: string }>();
-    results.forEach((r) => meanings.set(r.word, r.meaning));
+    results.forEach((r) => { if (!meanings.has(r.word)) meanings.set(r.word, r.meaning); });
   }
-  const fromDictionary = meanings.size;
+  const fromDictionary = meanings.size - fromWriter;
 
   // 3. The rest from Scala, in one request.
   const askAi = need.filter((n) => !meanings.has(n.word)).slice(0, MAX_WORDS);

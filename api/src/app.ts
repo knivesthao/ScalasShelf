@@ -168,10 +168,12 @@ export function createApp(platform: Platform) {
     const input = await body<{ source?: string; target?: string }>(c).catch(() => ({} as { source?: string; target?: string }));
     const source = language(input.source, 'en');
     const target = language(input.target, 'lo');
-    if (source === target) throw new BadRequest('Choose two different languages');
+    // Books are written in English, so English → Lao is the only direction there's text for.
+    if (source !== 'en' || target !== 'lo') throw new BadRequest('Books can be translated from English to Lao.');
     const texts = await bookText(userId, c.req.param('id'));
     const queued = await queueTranslations(db, texts, source, target);
-    if (queued && platform.translator) background(flushTranslations(db, platform.translator, translationUsage(db, platform.translator)));
+    const translator = platform.ai?.translator();
+    if (queued && translator) background(flushTranslations(db, translator, translationUsage(db, translator)));
     return c.json({ queued, ...(await translationStatus(db, texts, source, target)) }, 202);
   });
   app.get('/studio/projects/:id/translations', async (c) => {

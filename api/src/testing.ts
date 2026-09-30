@@ -32,8 +32,7 @@ export async function testApi({
     auth: auth === 'dev' ? devAuth : sessionAuth((sessionId) => sessionEmail(db, sessionId)),
     mailer: { development: false, send: async (mail) => { sent.push(mail); } },
     workerSecret: 'test-secret',
-    ai: text ? singleModel(text) : undefined,
-    translator,
+    ai: text || translator ? singleModel(text ?? { name: 'none', complete: async () => { throw new Error('No AI in this test'); } }, translator) : undefined,
     background: (task) => { pending.push(task); },
   });
   const settle = () => Promise.all(pending.splice(0));

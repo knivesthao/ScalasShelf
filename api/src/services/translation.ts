@@ -41,8 +41,10 @@ export function googleTranslate(apiKey: string): Translator {
 const MAX_TEXTS = 128;
 const MAX_CHARS = 5000;
 const MAX_ATTEMPTS = 3;
-/** Batches sent in one flush, so one run can't take too long. */
-const MAX_BATCHES = 10;
+/** Batches sent in one run: keeps a run short and within D1's queries per request. */
+const MAX_BATCHES = 5;
+/** A claim older than this belongs to a run that died; its texts can be taken again. */
+const CLAIM_EXPIRES_MS = 2 * 60 * 1000;
 
 export const LANGUAGES = ['en', 'lo'] as const;
 export type Language = (typeof LANGUAGES)[number];
@@ -103,17 +105,22 @@ export async function translationStatus(db: Db, texts: string[], source: Languag
 }
 
 /** Queues every text that isn't translated or queued yet. Returns how many were added. */
-export async function queueTranslations(db: Db, texts: string[], source: Language, target: Language): Promise<number> {
+export async function queueTranslations(db: Db, list: string[], source: Language, target: Language): Promise<number> {
+  const texts = [...new Set(list.map((t) => t.trim()).filter(Boolean))];
   const status = await translationStatus(db, texts, source, target);
   const missing = status.texts.filter((t) => t.translation === null).map((t) => t.text);
   if (!missing.length) return 0;
   const now = new Date().toISOString();
   const rows = await Promise.all(missing.map(async (text) => ({ text, hash: await textHash(text, source, target) })));
-  // Already-queued texts are skipped by the primary key.
-  await db.batch(rows.map((r) =>
+  // New texts are added; texts that failed before get a fresh set of tries (asking again
+  // is how a writer retries). Texts already waiting are left alone.
+  await db.batch(rows.flatMap((r) => [
     db.prepare(`INSERT OR IGNORE INTO translation_queue (hash, source_lang, target_lang, source_text, created_at) VALUES (?, ?, ?, ?, ?)`)
-      .bind(r.hash, source, target, r.text, now)));
-  return missing.length - status.waiting - status.failed;
+      .bind(r.hash, source, target, r.text, now),
+    db.prepare(`UPDATE translation_queue SET attempts = 0, error = NULL, claimed_at = NULL WHERE hash = ? AND attempts >= ?`)
+      .bind(r.hash, MAX_ATTEMPTS),
+  ]));
+  return missing.length - status.waiting;
 }
 
 /**
@@ -142,21 +149,41 @@ export async function flushTranslations(
   let translated = 0;
   let failed = 0;
   for (let batch = 0; batch < MAX_BATCHES; batch++) {
+    const claimedBefore = new Date(Date.now() - CLAIM_EXPIRES_MS).toISOString();
+    const free = `attempts < ? AND (claimed_at IS NULL OR claimed_at < ?)`;
     const next = await db.prepare(
-      `SELECT source_lang, target_lang FROM translation_queue WHERE attempts < ? ORDER BY created_at LIMIT 1`
-    ).bind(MAX_ATTEMPTS).first<{ source_lang: string; target_lang: string }>();
+      `SELECT source_lang, target_lang FROM translation_queue WHERE ${free} ORDER BY created_at LIMIT 1`
+    ).bind(MAX_ATTEMPTS, claimedBefore).first<{ source_lang: string; target_lang: string }>();
     if (!next) break;
-    const { results } = await db.prepare(
-      `SELECT hash, source_text FROM translation_queue WHERE attempts < ? AND source_lang = ? AND target_lang = ?
+    const { results: candidates } = await db.prepare(
+      `SELECT hash, source_text FROM translation_queue WHERE ${free} AND source_lang = ? AND target_lang = ?
        ORDER BY created_at LIMIT ?`
-    ).bind(MAX_ATTEMPTS, next.source_lang, next.target_lang, MAX_TEXTS).all<{ hash: string; source_text: string }>();
-    // Fill the batch up to the character limit (always at least one text).
+    ).bind(MAX_ATTEMPTS, claimedBefore, next.source_lang, next.target_lang, MAX_TEXTS).all<{ hash: string; source_text: string }>();
+    // Claim them: a text another run claimed in the meantime isn't sent again.
+    const claim = new Date().toISOString();
+    const claimed = new Set<string>();
+    // D1 allows 100 values per query, so claim in groups of 90.
+    for (let i = 0; i < candidates.length; i += 90) {
+      const group = candidates.slice(i, i + 90).map((c) => c.hash);
+      const { results: rows } = await db.prepare(
+        `UPDATE translation_queue SET claimed_at = ?
+         WHERE hash IN (${group.map(() => '?').join(', ')}) AND (claimed_at IS NULL OR claimed_at < ?) RETURNING hash`
+      ).bind(claim, ...group, claimedBefore).all<{ hash: string }>();
+      rows.forEach((r) => claimed.add(r.hash));
+    }
+    const results = candidates.filter((c) => claimed.has(c.hash));
+    if (!results.length) continue;
+    // Fill the batch up to the character limit (always at least one text); release the rest.
     const items: typeof results = [];
     let chars = 0;
     for (const r of results) {
       if (items.length && chars + r.source_text.length > MAX_CHARS) break;
       items.push(r);
       chars += r.source_text.length;
+    }
+    const leftOver = results.slice(items.length);
+    if (leftOver.length) {
+      await db.batch(leftOver.map((r) => db.prepare(`UPDATE translation_queue SET claimed_at = NULL WHERE hash = ?`).bind(r.hash)));
     }
 
     const started = Date.now();
@@ -176,7 +203,7 @@ export async function flushTranslations(
       const message = e instanceof Error ? e.message : 'Translation failed';
       console.error('Translation batch failed', e);
       await db.batch(items.map((item) =>
-        db.prepare(`UPDATE translation_queue SET attempts = attempts + 1, error = ? WHERE hash = ?`).bind(message.slice(0, 500), item.hash)));
+        db.prepare(`UPDATE translation_queue SET attempts = attempts + 1, error = ?, claimed_at = NULL WHERE hash = ?`).bind(message.slice(0, 500), item.hash)));
       failed += items.length;
       await record?.(chars, Date.now() - started, false);
       break; // the service is likely down; the timer tries again later

@@ -78,8 +78,6 @@ export interface Platform {
   workerSecret?: string;
   /** Picks the model for each AI job (services/ai-routes.ts). Without it, suggestions fall back to simple rules. */
   ai?: import('./services/ai-routes').AiRouter;
-  /** Translation service (Google Cloud Translation). Without one, texts wait in the queue. */
-  translator?: import('./services/translation').Translator;
   /** Spell checker for the Review checks (LanguageTool). Without one, spelling is skipped. */
   spelling?: import('./services/spelling').SpellChecker;
   /** Keeps work running after the response is sent (Workers: ctx.waitUntil). Default: just let it run. */

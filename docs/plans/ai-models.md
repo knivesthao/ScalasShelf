@@ -104,6 +104,31 @@ alternative if our Azure credits come through. Every translation is a draft a La
 
 These are estimates from list prices. The admin view shows the measured cost once books are made.
 
+## Providers, keys and swapping models
+
+Every provider is listed once in `api/src/services/providers.ts`, with the Worker secret it needs.
+Which model does which job is configuration: the defaults are in `api/src/services/ai-routes.ts`,
+and the `AI_ROUTES` Worker variable overrides any job without a code change, e.g.
+
+```json
+{"describe": [{"provider": "workers-ai", "model": "@cf/meta/llama-3.2-3b-instruct"}],
+ "finish": [{"provider": "anthropic", "model": "claude-sonnet-5-5", "attempts": 2}]}
+```
+
+| Provider id | Kind | Secret | Status |
+|---|---|---|---|
+| `workers-ai` | text | none (the `AI` binding) | Built |
+| `anthropic` | text | `ANTHROPIC_API_KEY` | Stub: needs `@anthropic-ai/sdk` |
+| `together` | text | `TOGETHER_API_KEY` | Stub |
+| `google-translate` | translate | `GOOGLE_TRANSLATE_KEY` | Built |
+| `microsoft-translator` | translate | `MICROSOFT_TRANSLATOR_KEY`, `MICROSOFT_TRANSLATOR_REGION` | Stub |
+| `workers-ai-image` | image | none | Stub (illustrations are off) |
+| `together-image` | image | `TOGETHER_API_KEY` | Stub |
+
+A provider is only used when it's built and its key is set; otherwise its routes are skipped and
+the next model in the list answers. Set a key with `npx wrangler secret put NAME` (from `api/`), or
+locally as an environment variable for `npm run dev`.
+
 ## What to sign up for
 
 | Service | Needed for | Account | What to do |
