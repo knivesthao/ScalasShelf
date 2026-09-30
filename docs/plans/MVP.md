@@ -1,4 +1,4 @@
-# Textweaver MVP — Stack Decision, Build Plan & Funding
+# Scala’s Shelf MVP — Stack Decision, Build Plan & Funding
 
 > Updated: 2026-09-24
 > Answers three questions: (1) which stack for the MVP, before any move to Unreal or Unity, (2) how the scene pipeline and comic format should work, (3) which grants and funding the new premise opens up.
@@ -24,7 +24,7 @@
 
 ## 1. The premise, restated
 
-**Textweaver is a free language-learning app.** Lao students learn English by reading short animated comics written for their level. (Later, with localization: Lao help text, and learners of Lao learning Lao.)
+**Scala’s Shelf is a free language-learning app.** Lao students learn English by reading short animated comics written for their level. (Later, with localization: Lao help text, and learners of Lao learning Lao.)
 
 The studio is how we make that content cheaply. A writer composes short English lines and describes the scene. The engine builds the scene, and the pipeline assembles panels into an **animated English comic** that learners **download once and read offline**. For now, all stories are original, written by our own team. Users are mainly in Laos and Southeast Asia, on cheap Android phones with patchy, metered data.
 
@@ -381,7 +381,7 @@ The Epic proposal (`docs/grants/epic-megagrants/`) **was submitted for the Sept 
 | **Cloudflare for Startups** | $5K–$250K credits | We already run on Pages/Workers/R2. No deadline | Apply now; the bootstrapped tier needs no funding ([cloudflare.com/startups](https://www.cloudflare.com/startups/)) |
 | **Other cloud/GPU credits** | Varies | Cuts GPU and hosting costs during the pilot | Google for Startups Cloud, Microsoft for Startups, NVIDIA Inception, AWS Activate |
 | **Australia Direct Aid Program** (Vientiane embassy) | Small grants | Funds education and community projects in Laos | **Partner non-profit applies**, with our Lao company as the technology provider and partner schools as pilot sites (an offline reading library in schools) ([form](https://laos.embassy.gov.au/vtan/AEV003001.html)) |
-| **Japan GGP / Kusanone** (Vientiane embassy) | < ¥10M (~$65K) | Supports education projects by NGOs, schools and local authorities. 350+ Lao projects since 1989 | **Partner non-profit (or a partner school) applies.** Pitch: school tablets + Textweaver offline library. GGP favors equipment and tangible deliverables ([how to apply](https://www.la.emb-japan.go.jp/jp/japans_oda_to_laos/ggp/ggp_how_to_apply.html)) |
+| **Japan GGP / Kusanone** (Vientiane embassy) | < ¥10M (~$65K) | Supports education projects by NGOs, schools and local authorities. 350+ Lao projects since 1989 | **Partner non-profit (or a partner school) applies.** Pitch: school tablets + Scala’s Shelf offline library. GGP favors equipment and tangible deliverables ([how to apply](https://www.la.emb-japan.go.jp/jp/japans_oda_to_laos/ggp/ggp_how_to_apply.html)) |
 
 ### Next calls to watch
 
@@ -397,7 +397,7 @@ The Epic proposal (`docs/grants/epic-megagrants/`) **was submitted for the Sept 
 ### Partners worth approaching (not grants, but they raise grant win rates)
 
 - **The Asia Foundation – Let's Read:** free digital library with offline download, **including Lao-language books**. It's both the closest competitor and the most natural partner. Its openly licensed stories could be adapted into motion comics (check each book's license), which would seed our library and give us an instant credible partner ([Let's Read](https://asiafoundation.org/programs/education-and-leadership/lets-read/)).
-- **Pratham Books – StoryWeaver:** the best-known open children's-story platform, and a possible *later* content source (for now, all stories are original). All stories and images are **CC BY 4.0**: no royalties, commercial use allowed, but every adaptation must carry StoryWeaver's attribution line crediting author, illustrator, funder and publisher ([attribution guidelines](https://storyweaver.org.in/attributions)). To support this, manifest v2 needs a `credits` / `source` field, and the reader and store listing must show it. We're keeping the Textweaver name. See [Naming](#naming-textweaver-vs-storyweaver) for how to handle the similarity.
+- **Pratham Books – StoryWeaver:** the best-known open children's-story platform, and a possible *later* content source (for now, all stories are original). All stories and images are **CC BY 4.0**: no royalties, commercial use allowed, but every adaptation must carry StoryWeaver's attribution line crediting author, illustrator, funder and publisher ([attribution guidelines](https://storyweaver.org.in/attributions)). To support this, manifest v2 needs a `credits` / `source` field, and the reader and store listing must show it. We're keeping the Scala’s Shelf name. See [Naming](#naming-scalas-shelf-vs-storyweaver) for how to handle the similarity.
 - **Room to Read** and **Big Brother Mouse** (Lao children's publisher): distribution into schools and a pool of local creators.
 
 ### Updated grant sequence
@@ -425,16 +425,14 @@ Get a short partnership MOU with the non-profit and **letters of support from 2�
 
 ---
 
-## Naming: Textweaver vs StoryWeaver
+## Naming: Scala’s Shelf (formerly Textweaver and Lao Media Maker)
 
-**Decision: keep Textweaver.** Changing it isn't necessary.
+**Decision (2026-09-30): renamed Textweaver to Scala’s Shelf.** "Textweaver" was too close to Pratham Books' StoryWeaver, which literacy funders already know, so a reviewer could think we're related or derivative. Before Textweaver, the product was called Lao Media Maker (LMM).
 
-- **Legal risk looks low.** The only "TEXTWEAVER" US trademark we found is a 2001 filing by the San Diego State University Foundation, **abandoned in 2003** ([Justia](https://trademarks.justia.com/763/40/textweaver-76340646.html)). "Textweaver" and "StoryWeaver" are different marks. Not legal advice, though: run a proper clearance before spending on branding (USPTO, WIPO Global Brand Database, Laos Department of Intellectual Property), then file for Textweaver in Class 9 (software) and Class 41 (education/publishing).
-- **The real risk is recognition, not law.** Literacy funders know StoryWeaver, and a reviewer might briefly think we're related or derivative. Handle it with positioning:
-  - Always pair the name with the category: **"Textweaver — animated comics for Lao readers."** StoryWeaver is static picture books, so the difference is clear in one line.
-  - Mention StoryWeaver once in competitive-landscape sections, as an open content source we build on. Naming it first shows we know the field.
-  - Readers will mostly see the **Lao app name and icon** in stores, so decide the Lao-script name early and use it consistently.
-- **Upside:** if we adapt StoryWeaver's openly licensed stories into motion comics, the similar name reads as a fit rather than a copy.
+- Mention the old names once where readers may know them: **"Scala’s Shelf (formerly Textweaver and Lao Media Maker)"**. Applications submitted before 2026-09-30 (Techstars, MIT Solve, Save the Children, Epic MegaGrants) use Textweaver.
+- Internal names stay on `textweaver` so nothing live breaks: the D1 database, the offline and Studio storage on readers' devices, the `textweaver.motion-comic/2` format id and the local `.data/textweaver.sqlite`.
+- **Trademark:** not checked yet. Run a clearance before spending on branding (USPTO, WIPO Global Brand Database, Laos Department of Intellectual Property), then file in Class 9 (software) and Class 41 (education/publishing).
+- Readers will mostly see the **Lao app name and icon** in stores, so decide the Lao-script name early and use it consistently.
 
 ---
 
@@ -445,16 +443,16 @@ Get a short partnership MOU with the non-profit and **letters of support from 2�
 | Epic MegaGrants submitted? | ✅ Yes, Sept 4, 2026 cycle | UE is described as the premium producer in all applications; decision ≈ Dec 2026 |
 | Open-source format + reader? | ✅ Yes (Studio + pipeline stay closed) | Unlocks UNICEF Venture Fund. Publish `format.ts` + `<MotionPanel>` under a permissive license (MIT/Apache-2.0) once the format stabilizes (~week 2) |
 | Lao entity type | For-profit, working closely with a non-profit, with school connections | Non-profit leads embassy grants; see [entity roles](#how-we-apply-entity-roles) |
-| Name | Keep **Textweaver** | See [Naming](#naming-textweaver-vs-storyweaver); run trademark clearance and file |
+| Name | **Scala’s Shelf** (renamed from Textweaver 2026-09-30) | See [Naming](#naming-scalas-shelf-formerly-textweaver-and-lao-media-maker); run trademark clearance and file |
 | Editions | **Lite** (every book) + **HD** (later, UE/Unity); library auto-picks by connection, reader can switch | See [Two editions](#two-editions-lite-and-hd) |
 | Studio for now | **Writing only, saved on the writer's device** (2026-09-24). Scene art, layout, audio and publishing switched off (`src/lib/features.ts`) | Stops bad actors flooding the database before sign-in exists; rendering comes later. Demo books are published directly |
-| Live demo | **https://textweaver.knives-thao.workers.dev** | Cloudflare Worker + D1, free plan. Library, reader, quiz and offline reading work publicly |
+| Live demo | **https://scalas-shelf.knives-thao.workers.dev** | Cloudflare Worker + D1, free plan. Library, reader, quiz and offline reading work publicly |
 | Pricing | **Free for all users.** No pricing in the Studio or library for now | Existing QR payment code stays in the repo but new content has no price. Revisit later |
 | Language | **English only** for now (content, meanings, quiz, Studio). Lao later with localization | Format keeps text keyed by language so Lao is additive. Removes translation review from the Studio |
 | Backend | **Cloudflare Workers API built with [Hono](https://hono.dev)**, no separate server (keeps hosting free). Built 2026-09-24 in `api/`; see `backend-architecture.md` | Keep business logic in plain TypeScript modules; Hono only maps routes and runs middleware, so swapping frameworks stays cheap. Runs under Node locally, since Cloudflare's local runtime needs macOS 13.5+ |
 | Database | **Cloudflare D1** (SQLite), replacing Supabase Postgres; files in **R2** | Free tier never pauses and sits with hosting, R2 and Workers AI. No row-level security, so every permission check lives in the API (covered by tests). Locally the API uses a SQLite file (same engine). The Studio has moved; library/reader pages move next |
 | Auth | **Decided later**, behind one small interface (`api/src/platform.ts`) | Users sign in in different ways, and **many people in Laos don't use email**, so email can't be the main method. Reading needs no account. Better Auth is the leading library; see `backend-architecture.md` → Authentication |
-| Open source | **Contribute to Hono upstream** when we need something it lacks or could do better | Only general-purpose improvements, not Textweaver-specific code. Open an issue or discussion first, then a PR (core, or the `honojs/middleware` repo). Doubles as marketing ("built with and contributing to Hono") and reduces the single-maintainer risk we depend on |
+| Open source | **Contribute to Hono upstream** when we need something it lacks or could do better | Only general-purpose improvements, not Scala’s Shelf-specific code. Open an issue or discussion first, then a PR (core, or the `honojs/middleware` repo). Doubles as marketing ("built with and contributing to Hono") and reduces the single-maintainer risk we depend on |
 
 ---
 

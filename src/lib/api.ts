@@ -1,4 +1,4 @@
-// Client for the Textweaver API (api/). Same-origin /api by default: the Vite dev
+// Client for the Scala’s Shelf API (api/). Same-origin /api by default: the Vite dev
 // server in development, the Cloudflare Worker in production. A mobile app build sets
 // VITE_API_URL to the deployed site, since the app itself isn't served from there.
 

@@ -11,7 +11,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
  */
 function localApi(): Plugin {
   return {
-    name: 'textweaver-local-api',
+    name: 'scalas-shelf-local-api',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         if (!req.url?.startsWith('/api/')) return next();

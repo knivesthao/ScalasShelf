@@ -41,7 +41,7 @@ export async function getStaff(db: Db, email: string): Promise<StaffMember | nul
 /** Throws unless the user is staff with one of the given roles. Admins pass every check. */
 export async function requireRole(db: Db, userId: string, roles: Role[]): Promise<StaffMember> {
   const member = await getStaff(db, userId);
-  if (!member) throw new Forbidden('Your account is not on the Textweaver staff list');
+  if (!member) throw new Forbidden('Your account is not on the Scala’s Shelf staff list');
   if (member.role !== 'admin' && !roles.includes(member.role)) throw new Forbidden('You don’t have access to this');
   return member;
 }
@@ -56,7 +56,7 @@ export async function requestSignInLink(
   const email = normalizeEmail(rawEmail);
   if (!EMAIL_PATTERN.test(email)) throw new BadRequest('Enter your email address.');
   const member = await getStaff(db, email);
-  if (!member) throw new Forbidden('That email isn’t on the Textweaver staff list. Ask an admin to add you.');
+  if (!member) throw new Forbidden('That email isn’t on the Scala’s Shelf staff list. Ask an admin to add you.');
 
   const now = Date.now();
   await db.batch([
@@ -77,9 +77,9 @@ export async function requestSignInLink(
   try {
     await mailer.send({
       to: email,
-      subject: 'Your Textweaver sign-in link',
-      text: `Hi ${member.name || 'there'},\n\nSign in to the Textweaver Studio:\n\n${link}\n\nThis link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.`,
-      html: `<p>Hi ${escapeHtml(member.name || 'there')},</p><p><a href="${link}">Sign in to the Textweaver Studio</a></p><p>This link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.</p>`,
+      subject: 'Your Scala’s Shelf sign-in link',
+      text: `Hi ${member.name || 'there'},\n\nSign in to the Scala’s Shelf Studio:\n\n${link}\n\nThis link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.`,
+      html: `<p>Hi ${escapeHtml(member.name || 'there')},</p><p><a href="${link}">Sign in to the Scala’s Shelf Studio</a></p><p>This link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.</p>`,
     });
   } catch (error) {
     console.error('Sign-in email failed:', error);

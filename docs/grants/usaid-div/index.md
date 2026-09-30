@@ -1,6 +1,6 @@
 # DIV Fund — Grant
 
-> **Status:** 🔵 WAITING ON PROTOTYPE — cannot apply until Textweaver has a working post-prototype MVP
+> **Status:** 🔵 WAITING ON PROTOTYPE — cannot apply until Scala’s Shelf has a working post-prototype MVP
 > **Dependency:** Epic MegaGrants will fund the prototype build. Apply to DIV Fund *after* prototype exists.
 > **Amount:** Stage 1 up to $200K, Stage 2 up to $500K, Stage 3 up to $1.5M
 > **URL:** https://www.div.fund
@@ -11,7 +11,7 @@
 
 ## ⚠️ Prototype Requirement
 
-> The DIV Fund only supports innovations that are **post-prototype** and ready to be tested in a real-world setting (per RFP). Textweaver does not yet have a working prototype.
+> The DIV Fund only supports innovations that are **post-prototype** and ready to be tested in a real-world setting (per RFP). Scala’s Shelf does not yet have a working prototype.
 >
 > **Strategy:** Apply to Epic MegaGrants first (funds prototype). Build the prototype. *Then* apply to DIV Fund.
 
@@ -40,7 +40,7 @@ We're targeting **Stage 1** — concept note submission.
 
 ---
 
-## Textweaver Fit
+## Scala’s Shelf Fit
 
 | Criterion | Assessment |
 |-----------|-----------|

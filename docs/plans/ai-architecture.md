@@ -1,4 +1,4 @@
-# Textweaver — AI Architecture: What Do We Actually Need AI For?
+# Scala’s Shelf — AI Architecture: What Do We Actually Need AI For?
 
 > **Principle:** Use the minimum AI necessary. Self-host everything on the RunPod GPU that we're already paying for. Zero external AI API costs.
 

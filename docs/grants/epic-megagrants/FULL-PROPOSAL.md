@@ -1,4 +1,4 @@
-# Textweaver (Textweaver) — Epic MegaGrants Proposal
+# Scala’s Shelf — Epic MegaGrants Proposal
 
 **Total request:** $41,671 · **Duration:** 12 months (September 2026 – August 2027)
 **Grant recipient:** ADMAIS (US) — applicant and award administrator
@@ -46,7 +46,7 @@ The visual style of UE-rendered content gives us a powerful advantage: tens of m
 
 ## 3. Why Unreal Engine? Why Not Just WebGL?
 
-Because we are not building a simple image generator — we are building an animation pipeline that ultimately produces **real-time interactive 3D books.** Each scene in an Textweaver children's book is not a flat image; it's a UE-rendered 3D environment with animated characters, dynamic lighting, and parallax depth. A child taps a character and it moves. The scene breathes.
+Because we are not building a simple image generator — we are building an animation pipeline that ultimately produces **real-time interactive 3D books.** Each scene in a Scala’s Shelf children's book is not a flat image; it's a UE-rendered 3D environment with animated characters, dynamic lighting, and parallax depth. A child taps a character and it moves. The scene breathes.
 
 Unreal Engine gives us:
 - **Blueprint-driven scene assembly** — AI-generated assets are composed into 3D environments programmatically via UE Blueprints
@@ -70,11 +70,11 @@ For Epic, this is a story no other engine can tell:
 
 ## 4. Technical Architecture
 
-Textweaver is a pipeline of four orchestrated stages, each leveraging a specific UE capability that no alternative engine or WebGL approach could replicate.
+Scala’s Shelf is a pipeline of four orchestrated stages, each leveraging a specific UE capability that no alternative engine or WebGL approach could replicate.
 
 ### Stage 1: Creator Interface — Pixel Streaming
 
-A Lao creator logs into the Textweaver web app through a standard browser — no UE installation, no GPU requirement. The editor UI is a React single-page application that receives a Pixel Streaming video feed from a headless UE5 instance running on a cloud GPU.
+A Lao creator logs into the Scala’s Shelf web app through a standard browser — no UE installation, no GPU requirement. The editor UI is a React single-page application that receives a Pixel Streaming video feed from a headless UE5 instance running on a cloud GPU.
 
 **Why Pixel Streaming instead of a custom web renderer:**
 - The creator needs real-time preview of 3D scenes as they are assembled — exactly what Pixel Streaming was built for
@@ -155,7 +155,7 @@ A headless UE5 process receives structured scene JSON and executes a fully autom
 
 ## 7. Team
 
-Textweaver is built by **ADMAIS** — two coordinated companies spanning both sides of the project — together with a network of **Lao educators** who carry the platform into classrooms.
+Scala’s Shelf is built by **ADMAIS** — two coordinated companies spanning both sides of the project — together with a network of **Lao educators** who carry the platform into classrooms.
 
 | Partner | Location | Role |
 |---------|----------|------|
@@ -171,7 +171,7 @@ Most international development technology projects fail because the team buildin
 
 ## 8. Competitive Landscape & Target Impact
 
-Textweaver does not exist in a vacuum. An honest accounting of who else is working in this space:
+Scala’s Shelf does not exist in a vacuum. An honest accounting of who else is working in this space:
 
 **1. AI Content Generation Platforms** (Midjourney, DALL-E, Stable Diffusion, Runway) — spectacular tools for individual images, but not storytelling platforms. They solve the pixel, not the story.
 
@@ -179,9 +179,9 @@ Textweaver does not exist in a vacuum. An honest accounting of who else is worki
 
 **3. Educational Platforms for Developing Markets** (Khan Academy, Kolibri, Rumie, Worldreader) — deliver curriculum or distribute existing books, but none build a content creation pipeline that lets local communities generate their own materials. Nobody is making the books.
 
-**4. Children's Publishing in Laos** (Big Brother Mouse, Room to Read) — allies, not competitors. Textweaver digitizes their model at 100x scale with zero printing cost, and provides the digital distribution layer they lack.
+**4. Children's Publishing in Laos** (Big Brother Mouse, Room to Read) — allies, not competitors. Scala’s Shelf digitizes their model at 100x scale with zero printing cost, and provides the digital distribution layer they lack.
 
-**Textweaver's Structural Moat — Four Things Nobody Else Combines:**
+**Scala’s Shelf's Structural Moat — Four Things Nobody Else Combines:**
 1. UE-powered 3D scene rendering with Pixel Streaming
 2. AI pipeline for end-to-end visual storytelling with consistent characters
 3. Offline-capable mobile distribution (chunked, under 5MB, 2G-capable)
@@ -247,14 +247,14 @@ Textweaver does not exist in a vacuum. An honest accounting of who else is worki
 
 Epic funds the spark. This section describes the fire.
 
-**Access Model: Free for Users.** Textweaver launches free for end users — every reader, student, and family can read without paying. This is made possible by grant-funded development, grant-funded hosting (administered by ADMAIS US), and near-zero marginal delivery cost. **"Free for now" is a deliberate, honest position** — we prioritize reach in the launch window, then introduce sustainability levers that keep consumer access free.
+**Access Model: Free for Users.** Scala’s Shelf launches free for end users — every reader, student, and family can read without paying. This is made possible by grant-funded development, grant-funded hosting (administered by ADMAIS US), and near-zero marginal delivery cost. **"Free for now" is a deliberate, honest position** — we prioritize reach in the launch window, then introduce sustainability levers that keep consumer access free.
 
 **Long-Term Sustainability Levers (that don't tax the end user):**
 - **Creator Subscription Tiers** — professional publishers pay monthly, differentiated by AI generation volume; casual creators publish free
 - **Institutional & donor-funded access** — schools, NGOs, and development organizations sponsor access
 - **Follow-on grants** — ISIF Asia (distribution), PCF (child-focused content), Google.org (AI/Lao language), UNESCO
 
-**Operational Sustainability:** Textweaver is not a new organization — it's an initiative of ADMAIS, which already operates as a sustainable business. ADMAIS US generates revenue from software/AI consulting; ADMAIS Laos serves local business clients. If grant funding is delayed or reduced, ADMAIS can sustain Textweaver at a reduced burn rate.
+**Operational Sustainability:** Scala’s Shelf is not a new organization — it's an initiative of ADMAIS, which already operates as a sustainable business. ADMAIS US generates revenue from software/AI consulting; ADMAIS Laos serves local business clients. If grant funding is delayed or reduced, ADMAIS can sustain Scala’s Shelf at a reduced burn rate.
 
 **3-Year View:**
 - **Year 1:** Grant-funded build + launch (40 titles, 100 beta users, 5 creators)

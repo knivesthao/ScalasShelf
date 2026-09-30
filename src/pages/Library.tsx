@@ -25,7 +25,7 @@ export function Library() {
   return (
     <div className="library">
       <header className="library-header">
-        <h1>Textweaver</h1>
+        <h1>Scala’s Shelf</h1>
         <nav className="header-nav">
           <Link to="/my-library">My Library</Link>
           {!READER_ONLY && <Link to="/studio">Studio</Link>}

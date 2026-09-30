@@ -1,4 +1,4 @@
--- Textweaver D1 schema (SQLite). Apply with:
+-- Scala’s Shelf D1 schema (SQLite). Apply with:
 --   npx wrangler d1 migrations apply textweaver --remote      (Cloudflare)
 -- Locally the API applies these files to .data/textweaver.sqlite on startup.
 --

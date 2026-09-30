@@ -1,14 +1,19 @@
-# Textweaver
+# Scala’s Shelf
+
+*Formerly Textweaver and Lao Media Maker.*
 
 A free English-learning app for students in Laos: short animated comics, written for
 their level, that download once and read anywhere, even without internet. Includes a
 Studio where writers turn a few lines of English into an animated comic.
 
+Internal names still use `textweaver` so nothing live or saved on readers' devices breaks: the
+D1 database, the offline and Studio storage keys, and the `textweaver.motion-comic/2` format id.
+
 ## Quick Start
 
 ```bash
-git clone https://github.com/knivesthao/Textweaver.git
-cd Textweaver
+git clone https://github.com/knivesthao/ScalasShelf.git
+cd ScalasShelf
 npm install
 npm run dev            # app + API on http://localhost:5173
 ```
@@ -39,7 +44,7 @@ npm run record         # demo video clips into ./recordings (reset .data/ first)
 
 ## Live site
 
-**https://textweaver.knives-thao.workers.dev** — one Cloudflare Worker (free plan)
+**https://scalas-shelf.knives-thao.workers.dev** — one Cloudflare Worker (free plan)
 serving the app and the API, with the D1 database `textweaver` (APAC).
 
 ```bash

@@ -1,10 +1,10 @@
 // Smoke test of the MVP in a real browser. Needs `npm run dev` running (fresh .data/).
 import { test, expect } from '@playwright/test';
 
-test.describe('Textweaver walkthrough', () => {
+test.describe('Scala’s Shelf walkthrough', () => {
   test('library → book → reader → word meaning → quiz', async ({ page }) => {
     await page.goto('http://localhost:5173');
-    await expect(page.getByRole('heading', { name: 'Textweaver' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Scala’s Shelf' })).toBeVisible();
     await page.getByText('Morning Market').first().click();
     await expect(page.getByText(/new words/)).toBeVisible();
     await page.getByRole('link', { name: 'Read' }).click();

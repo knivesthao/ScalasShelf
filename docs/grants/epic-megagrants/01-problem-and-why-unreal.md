@@ -1,7 +1,7 @@
 # 1. Problem, Narrative & Why Unreal
 
 ## Project Title
-**Textweaver (Textweaver): Real-Time 3D Content Creation for the World's Most Underserved Readers**
+**Scala’s Shelf: Real-Time 3D Content Creation for the World's Most Underserved Readers**
 
 ---
 
@@ -25,7 +25,7 @@ This is not a content consumer app. **This is a content factory.** We provide th
 
 ## Why Unreal Engine? Why Not Just WebGL?
 
-Because we are not building a simple image generator — we are building an animation pipeline that ultimately produces **real-time interactive 3D books.** Each scene in an Textweaver children's book is not a flat image; it's a UE-rendered 3D environment with animated characters, dynamic lighting, and parallax depth. A child taps a character and it moves. The scene breathes.
+Because we are not building a simple image generator — we are building an animation pipeline that ultimately produces **real-time interactive 3D books.** Each scene in a Scala’s Shelf children's book is not a flat image; it's a UE-rendered 3D environment with animated characters, dynamic lighting, and parallax depth. A child taps a character and it moves. The scene breathes.
 
 Unreal Engine gives us:
 - **Blueprint-driven scene assembly** — AI-generated assets are composed into 3D environments programmatically via UE Blueprints

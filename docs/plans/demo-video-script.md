@@ -17,7 +17,7 @@ only that stories are illustrated, and the outro names illustration as what come
 
 | Clip | Length | Speak window | On screen | Narration | Words |
 |---|---|---|---|---|---|
-| 1. Read | 18.5 s | 1.0–17.5 s | Library → book page | **(at 1.0 s)** "Textweaver is a free library of illustrated English comics for students in Laos." | 13 |
+| 1. Read | 18.5 s | 1.0–17.5 s | Library → book page | **(at 1.0 s)** "Scala’s Shelf is a free library of illustrated English comics for students in Laos." | 13 |
 | | | | Tap "market" → meaning pops up (≈ 7.5 s) | **(at 7.5 s)** "Tap any word to see what it means." | 8 |
 | | | | Scroll panels → quiz (≈ 11–17 s) | **(at 11.5 s)** "Every story ends with a quick quiz on the new words." | 10 |
 | 2. Offline | 5.6 s | 1.0–4.6 s | Download → My Library | **(at 1.0 s)** "Download once. Read anywhere, even offline." | 7 |
@@ -44,7 +44,7 @@ buffers at the start and end of the whole video.
 
 **Intro, 90-second version (≈ 14 s, or ≈ 10 s without the bracketed line), use instead of the above:**
 > "Students in Laos have very few books for learning English. Many live where the internet is slow or expensive,
-> and they read on low-cost phones. *[We're ADMAIS, and we built Textweaver to change that.]*"
+> and they read on low-cost phones. *[We're ADMAIS, and we built Scala’s Shelf to change that.]*"
 > *(32 words; 22 without the bracketed line)*
 
 **Outro, 60-second version (≈ 7.5 s):**
@@ -52,7 +52,7 @@ buffers at the start and end of the whole video.
 > *(17 words)*
 
 **Outro, 90-second version (≈ 15 s, or ≈ 13 s without the bracketed line), use instead of the above:**
-> "Textweaver is free and works offline, on the phones students already have. Next, we're adding illustrations made
+> "Scala’s Shelf is free and works offline, on the phones students already have. Next, we're adding illustrations made
 > from the writer's words, reading aloud, and a pilot with partner schools in Laos. *[Try it today at the link below.]*"
 > *(35 words; 29 without the bracketed line)*
 
@@ -68,7 +68,7 @@ buffers at the start and end of the whole video.
 
 - Record the voice separately and line it up to the cue times in an editor; it's easier than narrating live.
 - Leave the 1-second buffers silent. Background music can run under them, faded low.
-- Show the live link on the last frame: **textweaver.knives-thao.workers.dev**
+- Show the live link on the last frame: **scalas-shelf.knives-thao.workers.dev**
 - If a grant specifies a length, fill the extra time with the intro/outro lines above, not by speeding up the narration.
 - To re-record the footage: delete `.data/`, run `npm run dev`, then `npm run record`. Clip lengths can change slightly;
   re-check them against this table.

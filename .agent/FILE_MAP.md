@@ -1,9 +1,9 @@
-# Textweaver Project — File Map
+# Scala’s Shelf Project — File Map
 
 > Read this to find the right file. Each section file is < 150 lines for token efficiency.
 
 ```
-Textweaver/
+Scala’s Shelf/
 ├── DASHBOARD.md                     # 🔴 Read first — all actions sorted by deadline
 ├── idea.md                          # Core project idea (39 lines)
 ├── .agent/

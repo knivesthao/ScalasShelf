@@ -49,7 +49,7 @@ export default {
       files: env.FILES ? r2Store(env.FILES) : noFiles,
       auth: sessionAuth((sessionId) => sessionEmail(env.DB, sessionId)),
       mailer: env.RESEND_API_KEY
-        ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM ?? 'Textweaver <noreply@admais.xyz>')
+        ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM ?? 'Scala’s Shelf <noreply@admais.xyz>')
         : noMailer,
       workerSecret: env.WORKER_SECRET,
     });

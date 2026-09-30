@@ -57,7 +57,7 @@ describe('SignIn', () => {
     renderAt('/sign-in');
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'stranger@example.org' } });
     fireEvent.click(screen.getByText('Email me a sign-in link'));
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringMatching(/isn’t on the Textweaver staff list/));
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringMatching(/isn’t on the Scala’s Shelf staff list/));
     expect(api.sent).toHaveLength(0);
   });
 

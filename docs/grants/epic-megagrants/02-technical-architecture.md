@@ -1,6 +1,6 @@
 # 3. Technical Architecture
 
-Textweaver is a pipeline of four orchestrated stages, each leveraging a specific UE capability that no alternative engine or WebGL approach could replicate.
+Scala’s Shelf is a pipeline of four orchestrated stages, each leveraging a specific UE capability that no alternative engine or WebGL approach could replicate.
 
 ## Architecture Overview
 
@@ -58,7 +58,7 @@ Textweaver is a pipeline of four orchestrated stages, each leveraging a specific
 
 ## Stage 1: Creator Interface — Pixel Streaming
 
-A Lao creator logs into the Textweaver web app through a standard browser — no UE installation, no GPU requirement. The editor UI is a React single-page application that receives a Pixel Streaming video feed from a headless UE5 instance running on a cloud GPU (RunPod A5000, 24GB VRAM).
+A Lao creator logs into the Scala’s Shelf web app through a standard browser — no UE installation, no GPU requirement. The editor UI is a React single-page application that receives a Pixel Streaming video feed from a headless UE5 instance running on a cloud GPU (RunPod A5000, 24GB VRAM).
 
 **Why Pixel Streaming instead of a custom web renderer:**
 - The creator needs real-time preview of 3D scenes as they are assembled — exactly what Pixel Streaming was built for
@@ -113,7 +113,7 @@ The LLM scene struct serves as the prompt engineering bridge — turning freefor
 
 ## Stage 3: UE Scene Assembly Engine
 
-This is the core of Textweaver and the part that no other approach can replicate.
+This is the core of Scala’s Shelf and the part that no other approach can replicate.
 
 A headless UE5 process receives the structured scene data (JSON from Stage 2) and executes a fully automated assembly pipeline through Blueprints:
 

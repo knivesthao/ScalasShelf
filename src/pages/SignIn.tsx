@@ -63,7 +63,7 @@ export function SignIn() {
 
       {(state === 'form' || state === 'sending') && (
         <form className="sign-in-card" onSubmit={send}>
-          <p>For Textweaver writers, reviewers and admins. Reading never needs an account.</p>
+          <p>For Scala’s Shelf writers, reviewers and admins. Reading never needs an account.</p>
           <label>
             Email
             <input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.org" />

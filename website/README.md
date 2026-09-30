@@ -1,6 +1,6 @@
-# Textweaver Project Page
+# Scala’s Shelf Project Page
 
-A self-contained, static project page for **Textweaver (Textweaver)**, built for the ADMAIS company site.
+A self-contained, static project page for **Scala’s Shelf**, built for the ADMAIS company site.
 
 ## What's here
 
@@ -27,6 +27,6 @@ website/
 ## Notes
 
 - Single HTML file, all CSS inline — no build step, no dependencies.
-- Dark theme matches the Textweaver app palette (`#0f0f23`, `#ff6b6b`, `#4ecdc4`, `#ffb347`).
+- Dark theme matches the Scala’s Shelf app palette (`#0f0f23`, `#ff6b6b`, `#4ecdc4`, `#ffb347`).
 - Fully responsive, mobile-first.
 - Content is grant-ready: problem, solution, pipeline, features, stack, team, impact, and the $41,671 / 12-month Epic MegaGrant request.

@@ -2,13 +2,13 @@
 
 Epic funds the spark. This section describes the fire.
 
-The MegaGrant covers the 12-month window: a 3-month development sprint followed by 9 months of platform operations. After month 12, Textweaver transitions from a funded project to a self-sustaining platform. We are not building something that requires indefinite grant dependency. Textweaver is designed from day one with a clear path to stand on its own.
+The MegaGrant covers the 12-month window: a 3-month development sprint followed by 9 months of platform operations. After month 12, Scala’s Shelf transitions from a funded project to a self-sustaining platform. We are not building something that requires indefinite grant dependency. Scala’s Shelf is designed from day one with a clear path to stand on its own.
 
 ---
 
 ## Access Model: Free for Users
 
-Our priority is access, not revenue. Textweaver launches **free for end users** — every reader, student, and family can read the library without paying. Laos has a severe affordability constraint: a third of households are reducing spending on education, and the average family cannot afford to buy a single storybook. Charging readers would defeat the purpose of the platform before it begins.
+Our priority is access, not revenue. Scala’s Shelf launches **free for end users** — every reader, student, and family can read the library without paying. Laos has a severe affordability constraint: a third of households are reducing spending on education, and the average family cannot afford to buy a single storybook. Charging readers would defeat the purpose of the platform before it begins.
 
 This is made possible by the structure of the project:
 
@@ -24,7 +24,7 @@ This is made possible by the structure of the project:
 
 Consumer access stays free. Sustainability comes from three sources that do not tax the end user:
 
-- **Creator Subscription Tiers.** Professional publishers pay a monthly subscription to access the Textweaver creator platform, differentiated by AI generation volume. Casual creators (teachers, students) publish free with capped generation limits. This controls AI costs while building the creator pipeline.
+- **Creator Subscription Tiers.** Professional publishers pay a monthly subscription to access the Scala’s Shelf creator platform, differentiated by AI generation volume. Casual creators (teachers, students) publish free with capped generation limits. This controls AI costs while building the creator pipeline.
 - **Institutional & donor-funded access.** Schools, NGOs, and development organizations purchase content in bulk or sponsor free access for specific populations. These organizations have budgets for educational materials even when individual users do not.
 - **Follow-on grants.** The funding mosaic below (ISIF Asia, PCF, UNESCO, Google.org) funds distribution expansion, Lao language model training, and educational outcome measurement — extending the free window without charging readers.
 
@@ -40,7 +40,7 @@ The MegaGrant is the first step in a sequenced funding strategy:
 | **ISIF Asia** | Q1 2027 (apply) | Expand digital library distribution, fund connectivity and offline access improvements, support Lao creator training programs | Preparing for next round |
 | **PCF Innovation Fund** | TBD (contact Laos office) | Fund child-focused content creation, school testing, and educational outcome measurement | Investigating next cycle |
 | **Google.org AI for Social Good** | Rolling | Fund AI pipeline improvements, Lao language model training for TTS and translation | Under research |
-| **UNESCO ICT in Education** | Varies | Position Textweaver as a case study in digital literacy for underserved populations in Southeast Asia | Under research |
+| **UNESCO ICT in Education** | Varies | Position Scala’s Shelf as a case study in digital literacy for underserved populations in Southeast Asia | Under research |
 
 Each grant targets a different aspect of the platform — Epic builds the engine, ISIF expands distribution, PCF validates educational impact — creating a funding mosaic that does not depend on any single source.
 
@@ -48,13 +48,13 @@ Each grant targets a different aspect of the platform — Epic builds the engine
 
 ## Operational Sustainability: ADMAIS Is Already Running
 
-A critical advantage that most grant-funded projects lack: Textweaver is not a new organization. It is an initiative of ADMAIS, which already operates as a sustainable business on both sides of this project.
+A critical advantage that most grant-funded projects lack: Scala’s Shelf is not a new organization. It is an initiative of ADMAIS, which already operates as a sustainable business on both sides of this project.
 
-- **ADMAIS US** already generates revenue from custom software development, AI agent development, and digital growth consulting. Textweaver extends these capabilities into a new vertical — educational media — without requiring a new company structure. ADMAIS US also **administers the hosting and infrastructure** as the grant recipient, funded by the award.
-- **ADMAIS Laos** already serves small business clients in Laos with digital marketing and AI services. Textweaver adds a content creation and distribution product line to an existing, revenue-generating operation.
-- **Infrastructure is shared.** The cloud infrastructure, development tools, and operational systems built for Textweaver improve ADMAIS's ability to serve other clients — and vice versa. This is not a project that exists in isolation.
+- **ADMAIS US** already generates revenue from custom software development, AI agent development, and digital growth consulting. Scala’s Shelf extends these capabilities into a new vertical — educational media — without requiring a new company structure. ADMAIS US also **administers the hosting and infrastructure** as the grant recipient, funded by the award.
+- **ADMAIS Laos** already serves small business clients in Laos with digital marketing and AI services. Scala’s Shelf adds a content creation and distribution product line to an existing, revenue-generating operation.
+- **Infrastructure is shared.** The cloud infrastructure, development tools, and operational systems built for Scala’s Shelf improve ADMAIS's ability to serve other clients — and vice versa. This is not a project that exists in isolation.
 
-If grant funding is delayed or reduced, ADMAIS can sustain Textweaver at a reduced burn rate using existing revenue. The platform does not die if a single grant application fails.
+If grant funding is delayed or reduced, ADMAIS can sustain Scala’s Shelf at a reduced burn rate using existing revenue. The platform does not die if a single grant application fails.
 
 ---
 

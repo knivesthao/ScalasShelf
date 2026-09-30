@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 
-/** The full, authoritative policy lives on the ADMAIS site; this page covers Textweaver. */
+/** The full, authoritative policy lives on the ADMAIS site; this page covers Scala’s Shelf. */
 export const POLICY_URL = 'https://admais.xyz/about/safeguarding';
 
-/** Child safeguarding: how Textweaver keeps children safe, and how to report a concern. */
+/** Child safeguarding: how Scala’s Shelf keeps children safe, and how to report a concern. */
 export function Safeguarding() {
   return (
     <div className="policy-page">
@@ -13,12 +13,12 @@ export function Safeguarding() {
       </header>
 
       <p>
-        Textweaver is made by ADMAIS (US) and ADMAIS Lao, and follows the{' '}
+        Scala’s Shelf is made by ADMAIS (US) and ADMAIS Lao, and follows the{' '}
         <a href={POLICY_URL} target="_blank" rel="noopener noreferrer">ADMAIS Child Safeguarding Policy</a>.
         Every child has the right to be safe, and children never pay to read.
       </p>
 
-      <h2>How Textweaver keeps children safe</h2>
+      <h2>How Scala’s Shelf keeps children safe</h2>
       <ul>
         <li><strong>No child accounts.</strong> Children read without signing in, and devices can be shared safely.</li>
         <li><strong>No ads and no in-app purchases</strong> for children, ever.</li>

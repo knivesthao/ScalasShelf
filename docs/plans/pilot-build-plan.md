@@ -1,7 +1,7 @@
 # Pilot build plan: from live design to a pilot-ready app
 
-> Written 2026-09-27. Goal: finish Textweaver for the 12-month pilot in 1–3 months, matching what
-> the funding documents promise (ADMAIS repo: `public/decks/textweaver-save-the-children.html`,
+> Written 2026-09-27. Goal: finish Scala’s Shelf for the 12-month pilot in 1–3 months, matching what
+> the funding documents promise (ADMAIS repo: `public/decks/scalas-shelf-save-the-children.html`,
 > the supplement, and `docs/funding/applications.md`).
 > Architecture background: `backend-architecture.md`. This plan replaces the self-hosted GPU idea in
 > `ai-architecture.md` with a routed, multi-provider AI layer.

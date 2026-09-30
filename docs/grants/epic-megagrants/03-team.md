@@ -1,6 +1,6 @@
 # 4. Team
 
-Textweaver is built by **ADMAIS** — operating as two coordinated companies spanning both sides of this project — together with a network of **Lao educators** who will carry the platform into classrooms. This three-part structure is deliberate: one entity applies and hosts, one builds, and one distributes where it matters most.
+Scala’s Shelf is built by **ADMAIS** — operating as two coordinated companies spanning both sides of this project — together with a network of **Lao educators** who will carry the platform into classrooms. This three-part structure is deliberate: one entity applies and hosts, one builds, and one distributes where it matters most.
 
 ## The Structure
 
@@ -18,7 +18,7 @@ We do not have this problem. Our development is done in Laos, by Lao developers,
 
 ## ADMAIS (US) — Grant Management & Hosting
 
-ADMAIS US is the applicant for this grant and the steward of the technology. It applies for Epic MegaGrants, administers the award, and **manages the hosting and cloud infrastructure** that keep Textweaver running. Hosting is funded through the grant — ADMAIS US depends on the award to cover the GPU, CDN, and web hosting costs, and administers those resources as the grant recipient.
+ADMAIS US is the applicant for this grant and the steward of the technology. It applies for Epic MegaGrants, administers the award, and **manages the hosting and cloud infrastructure** that keep Scala’s Shelf running. Hosting is funded through the grant — ADMAIS US depends on the award to cover the GPU, CDN, and web hosting costs, and administers those resources as the grant recipient.
 
 **Key responsibilities:**
 - Epic MegaGrants application and award administration
@@ -33,8 +33,8 @@ ADMAIS US is the applicant for this grant and the steward of the technology. It 
 
 ADMAIS Laos is a digital media and AI services company based in Vientiane, serving small businesses across the country. The Laos team carries **most of the development work** — building the platform in-market, where the realities of the Lao telecom ecosystem, QR payment systems, and education infrastructure are lived daily rather than researched remotely.
 
-**Key capabilities brought to Textweaver:**
-- Primary software development of the Textweaver platform and creator tools
+**Key capabilities brought to Scala’s Shelf:**
+- Primary software development of the Scala’s Shelf platform and creator tools
 - On-the-ground user research with Lao students, teachers, and families
 - Integration with Lao mobile payment systems (BCEL One, LDB Mobile Banking) — a domain with zero documentation and tribal knowledge only
 - Lao-language content operations and quality assurance
@@ -44,18 +44,18 @@ ADMAIS Laos is a digital media and AI services company based in Vientiane, servi
 
 ## Educator Network — Distribution & Adoption
 
-Distribution is where most good content dies. We have solved this by partnering directly with the people who will put Textweaver in front of learners: a network of educators and education organizations across Laos.
+Distribution is where most good content dies. We have solved this by partnering directly with the people who will put Scala’s Shelf in front of learners: a network of educators and education organizations across Laos.
 
 Our distribution partners include:
 
-| Partner Type | Role in Textweaver |
+| Partner Type | Role in Scala’s Shelf |
 |--------------|-------------|
 | **Non-profit education organizations** | Institutional rollout, donor-funded access for underserved populations |
 | **English learning centers** | Direct user acquisition and English-language content validation |
 | **Teachers** | Classroom adoption, content feedback, literacy outcome measurement |
 | **Education administrators** | School-level integration and procurement |
 
-These educators are not passive recipients — they are the channel through which the platform reaches the readers who need it most. They validate content, run classroom pilots, and provide the feedback loop that turns Textweaver from a technology project into an educational tool that actually improves reading outcomes. In return, Textweaver gives them free access to a library of Lao and English reading materials that did not exist before.
+These educators are not passive recipients — they are the channel through which the platform reaches the readers who need it most. They validate content, run classroom pilots, and provide the feedback loop that turns Scala’s Shelf from a technology project into an educational tool that actually improves reading outcomes. In return, Scala’s Shelf gives them free access to a library of Lao and English reading materials that did not exist before.
 
 ---
 
@@ -63,4 +63,4 @@ These educators are not passive recipients — they are the channel through whic
 
 The combination of a US entity that applies and hosts, a Laos team that builds, and an educator network that distributes is the precise formula this project requires. We are not parachuting into a developing country with a solution conceived in a Silicon Valley coffee shop. We are building a platform **in Laos, by Lao developers, distributed through Lao educators** — powered by world-class hosting and technical oversight from the US.
 
-ADMAIS already operates across this bridge. Textweaver is the natural next step.
+ADMAIS already operates across this bridge. Scala’s Shelf is the natural next step.

@@ -21,14 +21,14 @@ No project media exists yet — we are applying at the concept stage. This grant
 ## Project build link
 > github?
 
-No public build yet. The repository will be created as the first deliverable in Month 1 of the grant period. We will host at github.com/admais/textweaver.
+No public build yet. The repository will be created as the first deliverable in Month 1 of the grant period. We will host at github.com/admais/scalas-shelf.
 
 ---
 
 ## Project website
 > subpage of admais.xyz
 
-https://admais.xyz/textweaver *(to be created — currently redirects to ADMAIS homepage)*
+https://admais.xyz/scalas-shelf *(to be created — currently redirects to ADMAIS homepage)*
 
 ---
 
@@ -42,7 +42,7 @@ https://admais.xyz/textweaver *(to be created — currently redirects to ADMAIS 
 
 **Unreal Engine 5** — not Unreal Editor for Fortnite (UEFN).
 
-UEFN is a specialized version of UE for building and publishing content exclusively within the Fortnite ecosystem. Textweaver is building a standalone web and mobile platform — a creator tool that generates downloadable comics and interactive books distributed through our own digital library, not through Fortnite. UEFN does not support Pixel Streaming for web-based creator tools, does not allow headless rendering, and does not export content outside the Fortnite platform. We need the full Unreal Engine 5 for its Blueprint scripting, Movie Render Queue, Sequencer for animation, and mobile packaging pipeline.
+UEFN is a specialized version of UE for building and publishing content exclusively within the Fortnite ecosystem. Scala’s Shelf is building a standalone web and mobile platform — a creator tool that generates downloadable comics and interactive books distributed through our own digital library, not through Fortnite. UEFN does not support Pixel Streaming for web-based creator tools, does not allow headless rendering, and does not export content outside the Fortnite platform. We need the full Unreal Engine 5 for its Blueprint scripting, Movie Render Queue, Sequencer for animation, and mobile packaging pipeline.
 
 ---
 
@@ -74,11 +74,11 @@ This pattern repeats across the region. Thailand's rural provinces face similar 
 
 ### The Solution
 
-We are building Textweaver (Textweaver): a web-based content creation platform where Unreal Engine 5 serves as a literacy engine. A creator writes a story scene by scene in Lao, English, or Thai. AI reads the narration and extracts what each scene needs — characters, settings, lighting, camera angles — as structured data. AI image generation produces consistent character sprites and backgrounds. Unreal Engine assembles everything into fully rendered 3D scenes with dynamic lighting and cinematic presentation. The output is a lightweight, downloadable comic or interactive children's book that a student can read on a $50 Android phone, offline, in pieces small enough to download over a 2G connection.
+We are building Scala’s Shelf: a web-based content creation platform where Unreal Engine 5 serves as a literacy engine. A creator writes a story scene by scene in Lao, English, or Thai. AI reads the narration and extracts what each scene needs — characters, settings, lighting, camera angles — as structured data. AI image generation produces consistent character sprites and backgrounds. Unreal Engine assembles everything into fully rendered 3D scenes with dynamic lighting and cinematic presentation. The output is a lightweight, downloadable comic or interactive children's book that a student can read on a $50 Android phone, offline, in pieces small enough to download over a 2G connection.
 
 The visual style of UE-rendered content gives us a powerful advantage: tens of millions of people across Southeast Asia already play games built with Unreal Engine. They know and trust this visual language. A child who has spent hours in UE-rendered worlds immediately recognizes and engages with educational content rendered through the same pipeline. We are meeting learners where their visual expectations already are.
 
-Textweaver has four stages:
+Scala’s Shelf has four stages:
 
 **Stage 1 — Creator Interface:** A web editor where creators write narratives. AI reads the story text (Lao, English, Thai) and automatically generates scene descriptions — what's happening, who's there, what the mood and lighting should be.
 
@@ -90,7 +90,7 @@ Textweaver has four stages:
 
 ### Why This Matters for Epic
 
-This project stretches Unreal Engine into territory it has never occupied: serving underserved readers through AI-assisted, real-time 3D content creation. It proves UE's versatility, opens a new adoption category (educational content creation for developing economies), showcases UE + AI integration as a product rather than a demo, and creates a replicable model across Southeast Asia. There is no direct competitor at this intersection — adjacent players either distribute static content, generate flat 2D images, or publish physical books — making Textweaver a first-mover in an unclaimed niche. This is the bold, lateral use of UE that MegaGrants was created to champion.
+This project stretches Unreal Engine into territory it has never occupied: serving underserved readers through AI-assisted, real-time 3D content creation. It proves UE's versatility, opens a new adoption category (educational content creation for developing economies), showcases UE + AI integration as a product rather than a demo, and creates a replicable model across Southeast Asia. There is no direct competitor at this intersection — adjacent players either distribute static content, generate flat 2D images, or publish physical books — making Scala’s Shelf a first-mover in an unclaimed niche. This is the bold, lateral use of UE that MegaGrants was created to champion.
 
 ### The Next Step
 
@@ -110,7 +110,7 @@ The next step is to prove the core loop end-to-end. We will provision a RunPod A
 
 5. **Free for readers, sustainable through creators and institutions.** The library is free for end users — we never charge a child to read. Sustainability comes from creator subscriptions and institutional/donor-funded access. The library grows organically as creators publish.
 
-6. **No direct competitor — an unoccupied niche.** Global digital education platforms (Khan Academy, Kolibri, Rumie, Worldreader) distribute static, pre-existing content; AI storytelling tools (Storybird, Comicai, AI Comic Factory) are English-only, flat 2D, and online-only; and Lao print publishers (Big Brother Mouse, Room to Read) lack any digital distribution network. No one combines an automated Unreal Engine 3D pipeline, offline-first lightweight downloads, a Lao-language interface, and local mobile money integration — the exact combination Textweaver delivers.
+6. **No direct competitor — an unoccupied niche.** Global digital education platforms (Khan Academy, Kolibri, Rumie, Worldreader) distribute static, pre-existing content; AI storytelling tools (Storybird, Comicai, AI Comic Factory) are English-only, flat 2D, and online-only; and Lao print publishers (Big Brother Mouse, Room to Read) lack any digital distribution network. No one combines an automated Unreal Engine 3D pipeline, offline-first lightweight downloads, a Lao-language interface, and local mobile money integration — the exact combination Scala’s Shelf delivers.
 
 ---
 

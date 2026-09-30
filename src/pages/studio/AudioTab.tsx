@@ -59,7 +59,7 @@ export function AudioTab({ projectId, draft, onChange }: AudioTabProps) {
   }
 
   if (!recordingSupported()) {
-    return <p className="studio-error">This browser can’t record audio. Try Chrome on Android, or the Textweaver app.</p>;
+    return <p className="studio-error">This browser can’t record audio. Try Chrome on Android, or the Scala’s Shelf app.</p>;
   }
 
   return (

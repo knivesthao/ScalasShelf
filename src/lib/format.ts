@@ -1,4 +1,4 @@
-// Textweaver motion-comic format (manifest v2).
+// Scala’s Shelf motion-comic format (manifest v2).
 //
 // One module shared by the Studio (authoring), the reader and the cloud packager's
 // contract. See docs/plans/MVP.md → "The comic format" and "Two editions".

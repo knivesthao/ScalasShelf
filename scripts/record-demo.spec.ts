@@ -1,5 +1,5 @@
 /**
- * Textweaver Demo Video — Automated Recording Script
+ * Scala’s Shelf Demo Video — Automated Recording Script
  *
  * Records 4 clips of the MVP for the demo/pitch video, each as a .webm in ./recordings,
  * phone-sized (860×1864 portrait; see playwright.record.config.ts).
@@ -37,7 +37,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test.describe('Textweaver Demo Video — Automated Recording', () => {
+test.describe('Scala’s Shelf Demo Video — Automated Recording', () => {
   test('clip-01-read', async ({ page }) => {
     await page.goto('/');
     await page.waitForSelector('.content-grid', { timeout: 10000 });

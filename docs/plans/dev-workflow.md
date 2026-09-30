@@ -1,6 +1,6 @@
 > **Superseded (2026-09-24):** this describes the earlier Supabase + QR-payment prototype. Current setup: `README.md`; current design: `backend-architecture.md` and `MVP.md`.
 
-# Textweaver — Local Development Workflow
+# Scala’s Shelf — Local Development Workflow
 
 > How to run everything on your machine without RunPod, Docker, or cloud costs.
 > You only spin up what you're working on.
@@ -25,8 +25,8 @@
 ## Step 1: Clone and Install
 
 ```bash
-git clone https://github.com/knivesthao/Textweaver.git
-cd Textweaver
+git clone https://github.com/knivesthao/ScalasShelf.git
+cd ScalasShelf
 
 # Frontend (React + Vite)
 npm install
@@ -59,7 +59,7 @@ You get these values once from Supabase dashboard → Settings → API. Write th
 
 ```bash
 # One terminal
-cd Textweaver
+cd ScalasShelf
 npm run dev
 # → Opens http://localhost:5173
 # → Supabase SDK connects directly to cloud Supabase
@@ -116,11 +116,11 @@ The placeholder image is just a PNG in `public/mock/` — could be a simple text
 
 ```bash
 # Terminal 1: Workers
-cd Textweaver/workers
+cd ScalasShelf/workers
 wrangler dev
 
 # Terminal 2: React
-cd Textweaver
+cd ScalasShelf
 npm run dev
 ```
 
@@ -149,11 +149,11 @@ This is the one part of development that isn't local. Everything else is.
 
 ```bash
 # 90% of the time — just this
-cd Textweaver && npm run dev
+cd ScalasShelf && npm run dev
 
 # When editing Workers API routes
-cd Textweaver/workers && wrangler dev               # Terminal 1
-cd Textweaver && npm run dev                         # Terminal 2
+cd ScalasShelf/workers && wrangler dev               # Terminal 1
+cd ScalasShelf && npm run dev                         # Terminal 2
 
 # When editing UE5 or Python backend
 git commit -am "fix: updated Blueprint orchestrator"

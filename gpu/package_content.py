@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pyright: basic
 """
-Textweaver Content Packaging Script
+Scala’s Shelf Content Packaging Script
 
 Runs on the RunPod GPU machine after UE5 finishes rendering.
 Compresses rendered images to WebP, generates a scene manifest,
@@ -180,7 +180,7 @@ def insert_metadata(meta: dict[str, Any]) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Package Textweaver content")
+    parser = argparse.ArgumentParser(description="Package Scala’s Shelf content")
     parser.add_argument("--input", required=True)
     parser.add_argument("--title", required=True)
     parser.add_argument("--language", required=True, choices=["lao", "english"])

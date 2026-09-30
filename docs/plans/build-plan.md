@@ -1,6 +1,6 @@
 > **Superseded (2026-09-24):** this describes the earlier Supabase + QR-payment prototype. Current setup: `README.md`; current design: `backend-architecture.md` and `MVP.md`.
 
-# Textweaver — Build Plan (Prompt-by-Prompt)
+# Scala’s Shelf — Build Plan (Prompt-by-Prompt)
 
 > **Build order:** Digital Library first → Creator Studio second.
 > **Architecture:** Cloudflare Pages (SPA) + Cloudflare Workers (API gateway) + Supabase (database + auth) + RunPod GPU (UE5 + AI inference) + R2 (content storage).
@@ -16,7 +16,7 @@
 ✅
 
 ```
-We're building Textweaver — a digital media library for comics and interactive children's books, primarily for Laos.
+We're building Scala’s Shelf — a digital media library for comics and interactive children's books, primarily for Laos.
 
 Scaffold the entire project:
 

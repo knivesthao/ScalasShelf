@@ -1,4 +1,4 @@
-# Textweaver Grant Dashboard
+# Scala’s Shelf Grant Dashboard
 
 > **One file to rule them all.** Read this first every session. Sorted by deadline — soonest at top.
 > Updated: 2026-07-12

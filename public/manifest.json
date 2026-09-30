@@ -1,6 +1,6 @@
 {
-  "name": "Textweaver",
-  "short_name": "Textweaver",
+  "name": "Scala’s Shelf",
+  "short_name": "Scala’s Shelf",
   "description": "Digital media library — comics and interactive books",
   "start_url": "/",
   "display": "standalone",

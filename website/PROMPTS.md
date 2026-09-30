@@ -1,4 +1,4 @@
-# Textweaver Project Page — AI Image Prompts
+# Scala’s Shelf Project Page — AI Image Prompts
 
 Generate these images with your preferred AI image tool (Midjourney, DALL-E, Stable Diffusion, etc.),
 then save them into the `images/` folder with the filenames below. The page will reference them directly.

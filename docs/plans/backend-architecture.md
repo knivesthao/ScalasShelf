@@ -1,4 +1,4 @@
-# Textweaver Backend Architecture
+# Scala’s Shelf Backend Architecture
 
 > Updated: 2026-09-24. Replaces the earlier Workers-gateway + Flask-on-GPU design.
 > Decisions and reasoning: `MVP.md` → Decisions (Backend, Database, Auth).
@@ -91,7 +91,7 @@ Sign-in goes behind the `Auth` interface in `api/src/platform.ts` (`userId(reque
 
 - Supabase is gone: the library, book page, reader, My Library and Studio all use `/api`. The purchase and payment pages were removed (everything is free).
 - Offline: saved books (package + images) live in IndexedDB (`src/lib/offline.ts`); the service worker caches the app itself in production builds.
-- **Live:** https://textweaver.knives-thao.workers.dev (Worker serving the app + `/api/*`, D1 `textweaver` in APAC, both demo books loaded with `npm run seed:remote`). Checked in a browser: library, reader, offline download and offline reading work; every write endpoint returns 401.
+- **Live:** https://scalas-shelf.knives-thao.workers.dev (Worker serving the app + `/api/*`, D1 `textweaver` in APAC, both demo books loaded with `npm run seed:remote`). Checked in a browser: library, reader, offline download and offline reading work; every write endpoint returns 401.
 - **Switched off** (`src/lib/features.ts`): `rendering` (scene art, panel layout, audio) and `cloudStudio` (server storage + publishing). The Studio saves drafts on the writer's device (`src/lib/studioStore.ts` → `deviceStore`); the API's Studio routes stay built and tested but unused, and refuse everything in production because there's no sign-in.
 - R2 not enabled yet (needs the dashboard; only voice recordings use it, and they're on hold).
 - `gpu/package_content.py` still writes to Supabase; it gets reworked when the real GPU worker is built (it should claim `package` jobs from `/api/worker/jobs/claim`).

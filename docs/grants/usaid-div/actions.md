@@ -1,6 +1,6 @@
 # DIV Fund — Action Items
 
-> ⏸️ **BLOCKED — waiting on prototype.** Cannot apply until Textweaver has a working post-prototype MVP.
+> ⏸️ **BLOCKED — waiting on prototype.** Cannot apply until Scala’s Shelf has a working post-prototype MVP.
 > **Dependency:** Epic MegaGrants → prototype build → then DIV Fund application.
 > Prep materials ready for when prototype exists: `application-prep.md`, `div-rfp.md`, `div-application.md`.
 

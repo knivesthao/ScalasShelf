@@ -1,4 +1,4 @@
-# Textweaver Architecture
+# Scala’s Shelf Architecture
 
 > Updated 2026-09-24. The detailed, current design is in [`backend-architecture.md`](./backend-architecture.md);
 > product scope and decisions are in [`MVP.md`](./MVP.md). This page is the one-screen overview.

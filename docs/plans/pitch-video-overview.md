@@ -1,4 +1,4 @@
-# Textweaver — Product Screenshots & Pitch Video Overview
+# Scala’s Shelf — Product Screenshots & Pitch Video Overview
 
 > **For:** ADMAIS LLC × External AI Assistant collaboration
 > **Purpose:** Plan screenshots, UI layouts, and short video captures for the Epic MegaGrant pitch video
@@ -8,7 +8,7 @@
 
 ## 1. High-Level Architecture & Tech Stack
 
-Textweaver is an **AI-powered digital media platform for Laos** that generates comics and interactive children's books, then distributes them through a mobile-first digital library accessible to Lao citizens via phone number.
+Scala’s Shelf is an **AI-powered digital media platform for Laos** that generates comics and interactive children's books, then distributes them through a mobile-first digital library accessible to Lao citizens via phone number.
 
 ### What the app does
 
@@ -78,7 +78,7 @@ USER (Laos, $50 Android phone)
 ### Screen Descriptions
 
 #### Library (`/`) — Primary Landing Page
-- Header with "Textweaver" title + nav link to My Library
+- Header with "Scala’s Shelf" title + nav link to My Library
 - Search bar + language dropdown filter (All / ລາວ / English)
 - Responsive grid of cover cards: image, title, language badge, reading level badge, price in kip
 - Empty state: "No books found."
@@ -342,7 +342,7 @@ When capturing screenshots, open these routes in the browser (dev server):
 
 ```bash
 # Start dev server
-cd Textweaver && npm run dev
+cd ScalasShelf && npm run dev
 # Opens at http://localhost:5173
 ```
 

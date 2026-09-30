@@ -6,7 +6,7 @@
 
 ---
 
-## Shared Textweaver Context (used by all prompts)
+## Shared Scala’s Shelf Context (used by all prompts)
 
 ```
 Project: AI-powered web app that generates comics and interactive children's books
@@ -33,7 +33,7 @@ Currently applying to: Epic MegaGrants (Unreal Engine), ISIF Asia
 
 ## Results Table
 
-| # | Grant | Status | Amount | Textweaver Fit | URL | Researched |
+| # | Grant | Status | Amount | Scala’s Shelf Fit | URL | Researched |
 |---|-------|--------|--------|---------|-----|------------|
 | 1 | UNESCO IFCD (cultural diversity) | ❌ Closed | $100K | ❌ No (content creation not eligible) | /ifcd/apply | ✅ 2026-07-12 |
 | 1b | UNESCO Participation Programme | ⏳ Closed (deadline Feb 27, 2026) — track 2028–2029 | $26K–$38K | ✅ Education + literacy + culture | [unesco.org/participation-programme](https://www.unesco.org/en/participation-programme) | ✅ 2026-07-12 |
