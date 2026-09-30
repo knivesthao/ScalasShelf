@@ -22,10 +22,10 @@ const fake: TextModel = { name: 'fake/model', complete: async () => ({ text: JSO
 describe('Scala Finish', () => {
   it('adds the new scenes after the written ones, grows the cast and marks the new words', async () => {
     const { db } = await testApi();
-    const before = await finishProject(db, undefined, 'demo-creator', 'demo-noy').catch((e: Error) => e.message);
+    const before = await finishProject(db, [], 'demo-creator', 'demo-noy').catch((e: Error) => e.message);
     expect(before).toMatch(/AI isn’t set up here/);
 
-    const book = await finishProject(db, fake, 'demo-creator', 'demo-noy');
+    const book = await finishProject(db, [{ model: fake, attempts: 1 }], 'demo-creator', 'demo-noy');
     expect(book.scenes).toHaveLength(5); // the 3 written demo scenes, then 2 new ones
     expect(book.first_new_scene).toBe(3);
     const added = book.scenes[3].data;

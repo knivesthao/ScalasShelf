@@ -96,12 +96,12 @@ export function applyFinish(
 
 
 /** Runs Scala Finish for a project and saves the result. Returns the updated book. */
-export async function finishProject(db: Db, model: TextModel | undefined, userId: string, projectId: string) {
+export async function finishProject(db: Db, models: { model: TextModel; attempts: number }[], userId: string, projectId: string) {
   const { project, scenes } = await getProject(db, userId, projectId);
   const drafts = scenes.map((s) => ({ ...emptyScene(), ...s.data }));
   const written = drafts.filter(sceneWritten);
   const name = (list: CastMember[], id?: string) => list.find((m) => m.id === id)?.name ?? '';
-  const result = await finishStory(model, {
+  const result = await finishStory(models, {
     project_id: project.id,
     title: project.title,
     description: project.description,

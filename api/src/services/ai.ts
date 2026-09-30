@@ -1,8 +1,6 @@
-// The AI layer. Each task says what it needs and gets the cheapest model that does it
-// (docs/plans/pilot-build-plan.md → Weeks 3–5). For now there is one task, the short
-// description on Scala’s Shelf, on Cloudflare Workers AI's free daily allowance. Other
-// tasks and providers (Together, Anthropic, Azure) plug in here as credits arrive.
-// AI output is always a draft: the writer can edit it and a reviewer checks every book.
+// The AI layer (Scala). Each job gets the cheapest model that does it well; the routing
+// table is in ./ai-routes.ts and the reasons in docs/plans/ai-models.md. AI output is
+// always a draft: the writer can edit it and a moderator checks every book.
 
 import { BadRequest } from '../errors';
 import type { Db, TextModel } from '../platform';
@@ -12,25 +10,27 @@ export interface WorkersAi {
   run(model: string, input: Record<string, unknown>): Promise<unknown>;
 }
 
-export const WORKERS_AI_TEXT_MODEL = '@cf/meta/llama-3.1-8b-instruct';
-
-export function workersAiText(ai: WorkersAi, model = WORKERS_AI_TEXT_MODEL): TextModel {
+export function workersAiText(ai: WorkersAi, model: string): TextModel {
   return {
     name: `workers-ai/${model}`,
-    async complete(system, prompt, maxTokens) {
+    async complete(system, prompt, maxTokens, options) {
       const out = (await ai.run(model, {
         messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
         max_tokens: maxTokens,
         temperature: 0.4,
-      })) as { response?: string; usage?: { prompt_tokens?: number; completion_tokens?: number } };
-      return { text: out.response ?? '', inputTokens: out.usage?.prompt_tokens, outputTokens: out.usage?.completion_tokens };
+        // JSON mode: the answer follows the schema (only some models support it; see ai-routes.ts).
+        ...(options?.jsonSchema ? { response_format: { type: 'json_schema', json_schema: options.jsonSchema } } : {}),
+      })) as { response?: string | Record<string, unknown>; usage?: { prompt_tokens?: number; completion_tokens?: number } };
+      // In JSON mode Workers AI may hand back the parsed object rather than a string.
+      const text = typeof out.response === 'string' ? out.response : JSON.stringify(out.response ?? '');
+      return { text, inputTokens: out.usage?.prompt_tokens, outputTokens: out.usage?.completion_tokens };
     },
   };
 }
 
 // ---- Usage tracking ----
 
-export type AiTask = 'describe' | 'idea' | 'finish';
+import type { AiTask } from './ai-routes';
 
 /**
  * Wraps a model so every call is recorded in ai_usage (task, model, book, tokens, time,
@@ -55,10 +55,10 @@ export function metered(
   };
   return {
     name: model.name,
-    async complete(system, prompt, maxTokens) {
+    async complete(system, prompt, maxTokens, options) {
       const started = Date.now();
       try {
-        const result = await model.complete(system, prompt, maxTokens);
+        const result = await model.complete(system, prompt, maxTokens, options);
         await record(started, true, result);
         return result;
       } catch (e) {
@@ -197,6 +197,12 @@ export function parseIdeaAnswer(raw: string): { description: string; level: Idea
   return { description, level };
 }
 
+const IDEA_SCHEMA = {
+  type: 'object',
+  properties: { description: { type: 'string' }, level: { type: ['string', 'null'], enum: ['A1', 'A2', 'B1', 'B2', null] } },
+  required: ['description', 'level'],
+};
+
 export async function suggestFromIdea(model: TextModel | undefined, raw: IdeaInput): Promise<IdeaSuggestion> {
   const idea = typeof raw?.idea === 'string' ? raw.idea.trim().slice(0, MAX_IDEA_CHARS) : '';
   if (!idea) throw new BadRequest('Describe the story first');
@@ -220,7 +226,7 @@ export async function suggestFromIdea(model: TextModel | undefined, raw: IdeaInp
     'Reply with JSON only: {"description": "...", "level": "A1"}' + (purpose === 'learning' ? '' : ' with "level": null') + '.';
   const prompt = `Title: ${title || '(untitled)'}\n\nThe writer's idea:\n${idea}`;
   try {
-    const answer = parseIdeaAnswer((await model.complete(system, prompt, 160)).text);
+    const answer = parseIdeaAnswer((await model.complete(system, prompt, 160, { jsonSchema: IDEA_SCHEMA })).text);
     if (!answer.description) return rules;
     return { description: answer.description, level: purpose === 'learning' ? answer.level ?? 'A1' : null, source: 'ai' };
   } catch (e) {
@@ -299,8 +305,12 @@ export function parseFinishAnswer(raw: string, purpose: 'learning' | 'reading'):
   return { scenes, characters: members(data.characters), places: members(data.places), words };
 }
 
-export async function finishStory(model: TextModel | undefined, raw: FinishInput): Promise<FinishResult> {
-  if (!model) throw new BadRequest('AI isn’t set up here. It works on the live site.');
+/**
+ * Tries each model in turn (ai-routes.ts → finish: Claude Haiku, then Sonnet, then Workers
+ * AI), each for its number of attempts, until one gives an answer that passes our checks.
+ */
+export async function finishStory(models: { model: TextModel; attempts: number }[], raw: FinishInput): Promise<FinishResult> {
+  if (!models.length) throw new BadRequest('AI isn’t set up here. It works on the live site.');
   if (!raw || typeof raw !== 'object') throw new BadRequest('Expected the book so far');
   const purpose = raw.purpose === 'reading' ? 'reading' : 'learning';
   const level = String(raw.level ?? 'A1').slice(0, 4);
@@ -342,15 +352,14 @@ export async function finishStory(model: TextModel | undefined, raw: FinishInput
     `Cast:\n${cast || '(none yet)'}\n\n` +
     `The story so far:\n${soFar || '(nothing written yet: write the whole story)'}`;
 
-  let lastError: unknown;
-  // Small models sometimes return broken JSON; one retry is usually enough.
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      return parseFinishAnswer((await model.complete(system, prompt, 2000)).text, purpose);
-    } catch (e) {
-      lastError = e;
+  for (const { model, attempts } of models) {
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      try {
+        return parseFinishAnswer((await model.complete(system, prompt, 2000)).text, purpose);
+      } catch (e) {
+        console.error(`AI finish attempt failed (${model.name})`, e);
+      }
     }
   }
-  console.error(`AI finish failed (${model.name})`, lastError);
   throw new BadRequest('AI couldn’t finish the story this time. Try again.');
 }

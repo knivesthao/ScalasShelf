@@ -4,6 +4,7 @@ import { createApp } from './app';
 import { memoryStore, migrate, sqliteDb } from './local';
 import { devAuth, sessionAuth, type Mail, type TextModel } from './platform';
 import { sessionEmail } from './services/staff';
+import { singleModel } from './services/ai-routes';
 import { seedDemo } from './seed';
 
 /**
@@ -28,7 +29,7 @@ export async function testApi({ seed = true, auth = 'dev' as 'dev' | 'session', 
     auth: auth === 'dev' ? devAuth : sessionAuth((sessionId) => sessionEmail(db, sessionId)),
     mailer: { development: false, send: async (mail) => { sent.push(mail); } },
     workerSecret: 'test-secret',
-    text,
+    ai: text ? singleModel(text) : undefined,
     background: (task) => { pending.push(task); },
   });
   const settle = () => Promise.all(pending.splice(0));

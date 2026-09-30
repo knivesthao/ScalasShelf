@@ -59,7 +59,12 @@ export interface Completion {
 export interface TextModel {
   /** Provider and model id, for logs and usage tracking, e.g. "workers-ai/@cf/meta/llama-3.1-8b-instruct". */
   name: string;
-  complete(system: string, prompt: string, maxTokens: number): Promise<Completion>;
+  complete(system: string, prompt: string, maxTokens: number, options?: CompleteOptions): Promise<Completion>;
+}
+
+export interface CompleteOptions {
+  /** A JSON schema the answer must follow (Workers AI JSON mode). Models without it are told in the prompt. */
+  jsonSchema?: Record<string, unknown>;
 }
 
 export interface Platform {
@@ -71,8 +76,8 @@ export interface Platform {
   secureCookies?: boolean;
   /** Shared secret the GPU worker uses to claim and finish jobs. */
   workerSecret?: string;
-  /** AI text model for Studio suggestions. Without one, suggestions fall back to simple rules. */
-  text?: TextModel;
+  /** Picks the model for each AI job (services/ai-routes.ts). Without it, suggestions fall back to simple rules. */
+  ai?: import('./services/ai-routes').AiRouter;
   /** Spell checker for the Review checks (LanguageTool). Without one, spelling is skipped. */
   spelling?: import('./services/spelling').SpellChecker;
   /** Keeps work running after the response is sent (Workers: ctx.waitUntil). Default: just let it run. */

@@ -5,6 +5,7 @@ import {
   aiUsage, metered, suggestDescription, suggestFromIdea, type DescribeInput, type IdeaInput,
 } from './services/ai';
 import { finishProject } from './services/finish';
+import type { AiTask } from './services/ai-routes';
 import { adminBook, adminBooks, adminOverview } from './services/admin';
 import { getBook, listBooks } from './services/books';
 import { bookStats, recordEvents, type EventBatch } from './services/events';
@@ -117,12 +118,16 @@ export function createApp(platform: Platform) {
   // ---- Studio (staff) ----
 
   // AI suggestions for the Publish tab. Staff only, so the free AI allowance can't be drained.
-  // Every AI call is recorded in ai_usage (services/ai.ts → metered).
+  // Every AI call goes to the model its job is routed to (services/ai-routes.ts) and is
+  // recorded in ai_usage (services/ai.ts → metered).
+  const modelsFor = (task: AiTask, context: { userId: string; projectId?: string | null }) =>
+    (platform.ai?.models(task) ?? []).map(({ model, attempts }) => ({ model: metered(model, db, { task, ...context })!, attempts }));
+  const firstModel = (task: AiTask, context: { userId: string; projectId?: string | null }) => modelsFor(task, context)[0]?.model;
   const projectIdOf = (input: { project_id?: unknown }) => (typeof input?.project_id === 'string' ? input.project_id : null);
   app.post('/studio/suggest/description', async (c) => {
     const userId = await requireStaff(c);
     const input = await body<DescribeInput>(c);
-    const model = metered(platform.text, db, { task: 'describe', userId, projectId: projectIdOf(input) });
+    const model = firstModel('describe', { userId, projectId: projectIdOf(input) });
     return c.json(await suggestDescription(model, input));
   });
   // Scala Finish: the server reads the saved book, writes the rest and saves it (services/finish.ts).
@@ -131,17 +136,17 @@ export function createApp(platform: Platform) {
     const userId = await requireStaff(c);
     const projectId = c.req.param('id');
     await assertOwnsProject(db, userId, projectId);
-    const model = metered(platform.text, db, { task: 'finish', userId, projectId });
-    if (!model) throw new BadRequest('AI isn’t set up here. It works on the live site.');
+    const models = modelsFor('finish', { userId, projectId });
+    if (!models.length) throw new BadRequest('AI isn’t set up here. It works on the live site.');
     const jobId = await runInBackground(db, background, { userId, projectId, kind: 'finish' }, async () => {
-      const book = await finishProject(db, model, userId, projectId);
+      const book = await finishProject(db, models, userId, projectId);
       return { first_new_scene: book.first_new_scene };
     });
     return c.json({ job_id: jobId, status: 'running' }, 202);
   });
   app.post('/studio/suggest/idea', async (c) => {
     const userId = await requireStaff(c);
-    return c.json(await suggestFromIdea(metered(platform.text, db, { task: 'idea', userId }), await body<IdeaInput>(c)));
+    return c.json(await suggestFromIdea(firstModel('idea', { userId }), await body<IdeaInput>(c)));
   });
 
   app.get('/studio/projects', async (c) => c.json(await listProjects(db, await requireStaff(c))));

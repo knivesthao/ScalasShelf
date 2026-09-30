@@ -8,10 +8,15 @@ import type { Db } from '../platform';
  * Estimated price per million tokens, in US dollars, by model (ai_usage.model).
  * Update from the provider's price page when prices change:
  * https://developers.cloudflare.com/workers-ai/platform/pricing/ (checked 2026-09-30).
+ * Keep in step with docs/plans/ai-models.md.
  * Workers AI also gives a free daily allowance, so real spend can be lower.
  */
 export const PRICES_PER_MILLION: Record<string, { input: number; output: number }> = {
   'workers-ai/@cf/meta/llama-3.1-8b-instruct': { input: 0.282, output: 0.827 },
+  'workers-ai/@cf/meta/llama-3.1-8b-instruct-fp8-fast': { input: 0.045, output: 0.384 },
+  // https://docs.anthropic.com pricing (models overview), checked 2026-09-30.
+  'anthropic/claude-haiku-4-5': { input: 1, output: 5 },
+  'anthropic/claude-sonnet-5-5': { input: 2, output: 10 },
 };
 
 interface ModelTokens { model: string; input_tokens: number; output_tokens: number }

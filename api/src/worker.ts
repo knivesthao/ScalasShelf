@@ -7,6 +7,7 @@
 
 import { createApp } from './app';
 import { workersAiText, type WorkersAi } from './services/ai';
+import { aiRouter } from './services/ai-routes';
 import { languageTool } from './services/spelling';
 import { noMailer, resendMailer, sessionAuth, type Db, type FileStore } from './platform';
 import { sessionEmail } from './services/staff';
@@ -56,7 +57,8 @@ export default {
         ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM ?? 'Scala’s Shelf <noreply@admais.xyz>')
         : noMailer,
       workerSecret: env.WORKER_SECRET,
-      text: env.AI ? workersAiText(env.AI) : undefined,
+      // Each AI job's model: services/ai-routes.ts. Claude joins once its provider is set up.
+      ai: aiRouter({ ...(env.AI ? { 'workers-ai': (model: string) => workersAiText(env.AI!, model) } : {}) }),
       spelling: languageTool(),
       // Background jobs (Scala Finish) keep running after the response is sent.
       background: (task) => (ctx as { waitUntil(p: Promise<unknown>): void }).waitUntil(task),
