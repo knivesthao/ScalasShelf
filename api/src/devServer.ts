@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { createApp } from './app';
 import { folderStore, migrate, sqliteDb } from './local';
 import { consoleMailer, sessionAuth } from './platform';
+import { languageTool } from './services/spelling';
 import { sessionEmail } from './services/staff';
 import { seedDemo } from './seed';
 
@@ -23,6 +24,8 @@ const app = createApp({
   // Real staff sign-in; links print to the terminal (and the sign-in page shows them).
   auth: sessionAuth((sessionId) => sessionEmail(db, sessionId)),
   mailer: consoleMailer,
+  // The real spell checker locally too (it's a free public API).
+  spelling: languageTool(),
   secureCookies: false,
   workerSecret: process.env.WORKER_SECRET ?? 'dev-worker-secret',
 });

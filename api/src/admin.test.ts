@@ -45,3 +45,36 @@ describe('admin view', () => {
     expect((await call('GET', '/admin/books/nope', admin)).status).toBe(404);
   });
 });
+
+describe('Review checks', () => {
+  it('uses the spell checker, ignores cast names, and blocks sending until everything is green', async () => {
+    const { call, raw } = await testApi();
+    raw.prepare(`UPDATE projects SET status = 'draft', description = '' WHERE id = 'demo-noy'`).run();
+    const checks = (await call('POST', '/studio/projects/demo-noy/check')).json.checks as { id: string; status: string }[];
+    expect(checks.map((c) => c.id)).toEqual(['details', 'pages', 'lines', 'art', 'spelling', 'level', 'words', 'quiz']);
+    expect(checks.find((c) => c.id === 'details')?.status).toBe('fail'); // no description
+    expect(checks.find((c) => c.id === 'spelling')?.status).toBe('skipped'); // no spell checker in tests
+    const res = await call('POST', '/studio/projects/demo-noy/submit');
+    expect(res.status).toBe(400);
+    expect(res.json.error).toMatch(/Fix these first/);
+  });
+
+  it('turns LanguageTool’s matches into page-by-page problems', async () => {
+    const { spellingCheck } = await import('./services/spelling');
+    const drafts = [
+      { description: '', aspect: '9:16' as const, layers: [], assets: {}, caption: '', bubbles: [
+        { id: 'b1', speaker: 'Noy', characterId: 'c1', style: 'speech' as const, x: 0, y: 0, w: 1, text: { en: 'Noy is late for scool.' }, tokens: {}, audio: {} },
+      ] },
+    ];
+    const checker = {
+      check: async (text: string) => [
+        { offset: text.indexOf('Noy'), length: 3, suggestions: ['Now'] },
+        { offset: text.indexOf('scool'), length: 5, suggestions: ['school'] },
+      ],
+    };
+    const cast = { characters: [{ id: 'c1', name: 'Noy', description: '' }], places: [] };
+    const check = await spellingCheck(checker, drafts, cast);
+    expect(check.status).toBe('fail');
+    expect(check.problems).toEqual([{ scene: 1, message: '“scool”: did you mean “school”?' }]);
+  });
+});

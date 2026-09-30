@@ -15,7 +15,7 @@ import {
 } from './services/staff';
 import {
   addScene, approveProject, assertOwnsProject, createProject, deleteProject, deleteScene, getProject, getReviewItem,
-  listProjects, listReviewQueue, requestChanges, saveProject, submitForReview, unpublishProject, type SaveInput,
+  listProjects, listReviewQueue, requestChanges, reviewChecks, saveProject, submitForReview, unpublishProject, type SaveInput,
 } from './services/studio';
 
 // Routes only: read the request, call a service, return JSON. Business rules live in
@@ -161,8 +161,10 @@ export function createApp(platform: Platform) {
     return c.json({ ok: true });
   });
   // Creators submit; only reviewers publish (every book is checked by an adult first).
+  app.post('/studio/projects/:id/check', async (c) =>
+    c.json({ checks: await reviewChecks(db, await requireStaff(c), c.req.param('id'), platform.spelling) }));
   app.post('/studio/projects/:id/submit', async (c) =>
-    c.json(await submitForReview(db, await requireStaff(c), c.req.param('id'))));
+    c.json(await submitForReview(db, await requireStaff(c), c.req.param('id'), platform.spelling)));
   app.post('/studio/projects/:id/unpublish', async (c) => {
     const userId = await requireStaff(c);
     const member = await getStaff(db, userId);

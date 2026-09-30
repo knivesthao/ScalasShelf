@@ -211,22 +211,31 @@ describe('StudioEditor', () => {
     await waitFor(() => expect(rows(`SELECT id FROM scenes WHERE project_id = 'demo-noy'`)).toHaveLength(3));
   });
 
-  it('blocks sending for review until every scene has art', async () => {
+  // The Review animation ticks each check off in turn, so allow it a few seconds.
+  const ANIMATION = { timeout: 10_000 };
+
+  it('Review shows a red check for pages without art, and no send button', async () => {
     renderAt('/studio/comic/demo-noy');
     await screen.findByDisplayValue(FIRST_LINE);
     fireEvent.click(screen.getByRole('tab', { name: 'Publish' }));
-    expect(screen.getAllByText(/No art yet/)).toHaveLength(3);
-    expect((screen.getByText('Send for review') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByText(/Checklist/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+    expect(await screen.findAllByText(/No picture yet/, {}, ANIMATION)).toHaveLength(3);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Review' })).toBeDefined(), ANIMATION);
+    expect(screen.queryByText('Send for publish')).toBeNull();
   });
 
-  it('sends a finished episode for review; nothing reaches the library yet', async () => {
+  it('once every check is green, Send for publish sends it to a moderator', async () => {
     giveEveryNoySceneArt();
+    const quiz = [1, 2, 3].map((n) => ({ id: `q${n}`, type: 'meaning', prompt: `Word ${n}`, options: ['a', 'b'], answer: 0 }));
+    api.raw.prepare(`UPDATE projects SET description = 'Noy is late for school.', quiz = ? WHERE id = 'demo-noy'`).run(JSON.stringify(quiz));
     renderAt('/studio/comic/demo-noy');
     await screen.findByDisplayValue(FIRST_LINE);
     fireEvent.click(screen.getByRole('tab', { name: 'Publish' }));
-    fireEvent.click(screen.getByText('Send for review'));
+    fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Send for publish' }, ANIMATION));
 
-    expect(await screen.findByText(/Waiting for review/)).toBeDefined();
+    expect(await screen.findByText(/Waiting for a moderator/)).toBeDefined();
     expect(await libraryTitles()).toEqual(['Morning Market']);
     expect(rows(`SELECT review_status FROM projects WHERE id = 'demo-noy'`)).toEqual([{ review_status: 'in_review' }]);
   });
@@ -237,7 +246,7 @@ describe('StudioEditor', () => {
     await screen.findByDisplayValue(FIRST_LINE);
     fireEvent.click(screen.getByRole('tab', { name: 'Publish' }));
     expect(screen.getByText('Scene 2 needs a clearer picture.')).toBeDefined();
-    expect(screen.getByText('Send for review again')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Review' })).toBeDefined();
   });
 });
 

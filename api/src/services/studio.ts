@@ -1,4 +1,5 @@
-import { bookChecklist } from '../../../src/lib/checklist';
+import { allClear, bookChecks, type Check } from '../../../src/lib/checklist';
+import { spellingCheck, type SpellChecker } from './spelling';
 import {
   LEVELS, buildPackage, emptyScene, readingLevel, validatePackage,
   type Cast, type Level, type Package, type QuizItem, type SceneDraft,
@@ -304,15 +305,32 @@ async function publishPackage(db: Db, project: ProjectRow, pkg: Package, reviewe
  * approves it (child safeguarding policy: every book is checked by an adult first).
  */
 /**
+ * The Review button: every check a book must pass, in order, with spelling (LanguageTool)
+ * after the page checks. Runs on what's saved, so the Studio saves first.
+ */
+export async function reviewChecks(db: Db, userId: string, projectId: string, spelling?: SpellChecker): Promise<Check[]> {
+  const { project, scenes } = await getProject(db, userId, projectId);
+  const drafts = scenes.map((s) => s.data);
+  const checks = bookChecks(project, drafts);
+  const at = checks.findIndex((c) => c.id === 'art') + 1;
+  checks.splice(at, 0, await spellingCheck(spelling, drafts, project.cast));
+  return checks;
+}
+
+/**
  * Sends a book for review. The package is built here from what's saved, and the same
  * checklist the Studio shows is enforced, so the phone only edits and never assembles
  * the book. (Older app versions still post a package; it's ignored.)
  */
-export async function submitForReview(db: Db, userId: string, projectId: string): Promise<Project> {
+export async function submitForReview(db: Db, userId: string, projectId: string, spelling?: SpellChecker): Promise<Project> {
   const { project, scenes } = await getProject(db, userId, projectId);
   const drafts = scenes.map((s) => s.data);
-  const errors = bookChecklist(project, drafts).filter((i) => i.level === 'error');
-  if (errors.length) throw new BadRequest(errors.map((i) => (i.scene ? `Scene ${i.scene}: ${i.message}` : i.message)).join('; '));
+  // The same checks as the Review button; a phone can't skip them.
+  const checks = await reviewChecks(db, userId, projectId, spelling);
+  if (!allClear(checks)) {
+    const failed = checks.filter((c) => c.status === 'fail').flatMap((c) => c.problems.map((p) => (p.scene ? `Scene ${p.scene}: ${p.message}` : p.message)));
+    throw new BadRequest(`Fix these first: ${failed.join('; ')}`);
+  }
   const pkg = buildPackage({ id: project.id, title: project.title, level: project.level }, drafts, project.quiz);
   checkPackage(projectId, pkg);
   const ts = now();

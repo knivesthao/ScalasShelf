@@ -7,6 +7,7 @@
 
 import { createApp } from './app';
 import { workersAiText, type WorkersAi } from './services/ai';
+import { languageTool } from './services/spelling';
 import { noMailer, resendMailer, sessionAuth, type Db, type FileStore } from './platform';
 import { sessionEmail } from './services/staff';
 
@@ -56,6 +57,7 @@ export default {
         : noMailer,
       workerSecret: env.WORKER_SECRET,
       text: env.AI ? workersAiText(env.AI) : undefined,
+      spelling: languageTool(),
       // Background jobs (Scala Finish) keep running after the response is sent.
       background: (task) => (ctx as { waitUntil(p: Promise<unknown>): void }).waitUntil(task),
     });

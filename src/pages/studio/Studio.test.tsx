@@ -92,11 +92,12 @@ describe('Studio (writing only, on this device)', () => {
     renderAt('/studio/comic/draft-noy');
     await screen.findByDisplayValue(FIRST_LINE);
     fireEvent.click(screen.getByRole('tab', { name: 'Publish' }));
-    expect(screen.queryByText(/No art yet/)).toBeNull();
-    expect(screen.queryByText(/has no audio/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+    // Art isn't required while illustrations are off, and guests can't use the spell checker.
+    expect(await screen.findByText('Illustrations are switched off for now.', {}, { timeout: 10_000 })).toBeDefined();
+    expect(await screen.findByText('Sign in to check spelling.', {}, { timeout: 10_000 })).toBeDefined();
     expect(screen.queryByText(/vocab/)).toBeNull();
-    expect(screen.getByText(/Sign in to send books for review\. Your draft is saved on this device\./)).toBeDefined();
-    expect(screen.queryByText('Send for review')).toBeNull();
+    expect(screen.queryByText('Send for publish')).toBeNull();
   });
 });
 
