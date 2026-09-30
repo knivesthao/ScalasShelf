@@ -5,6 +5,7 @@ import {
   aiUsage, metered, suggestDescription, suggestFromIdea, type DescribeInput, type IdeaInput,
 } from './services/ai';
 import { finishProject } from './services/finish';
+import { adminBook, adminBooks, adminOverview } from './services/admin';
 import { getBook, listBooks } from './services/books';
 import { bookStats, recordEvents, type EventBatch } from './services/events';
 import { claimNextJob, finishJob, getJob, queueJob, runInBackground } from './services/jobs';
@@ -199,6 +200,19 @@ export function createApp(platform: Platform) {
     await requireRole(db, userId, []);
     return userId;
   };
+  // The admin view: cost and time to make books, and how they're read.
+  app.get('/admin/overview', async (c) => {
+    await requireAdmin(c);
+    return c.json(await adminOverview(db, c.req.query('since')));
+  });
+  app.get('/admin/books', async (c) => {
+    await requireAdmin(c);
+    return c.json(await adminBooks(db));
+  });
+  app.get('/admin/books/:id', async (c) => {
+    await requireAdmin(c);
+    return c.json(await adminBook(db, c.req.param('id')));
+  });
   app.get('/admin/ai-usage', async (c) => {
     await requireAdmin(c);
     return c.json(await aiUsage(db, c.req.query('since')));

@@ -5,6 +5,9 @@ import { api } from './api';
 
 export type Role = 'creator' | 'reviewer' | 'admin';
 
+/** What people see. Moderators (role "reviewer") approve books before they reach Scala’s Shelf. */
+export const ROLE_LABEL: Record<Role, string> = { creator: 'Creator', reviewer: 'Moderator', admin: 'Admin' };
+
 export interface StaffUser {
   email: string;
   name: string;

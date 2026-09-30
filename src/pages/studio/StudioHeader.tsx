@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { canReview, isAdmin, signOut, type StaffUser } from '@/lib/auth';
+import { ROLE_LABEL, canReview, isAdmin, signOut, type StaffUser } from '@/lib/auth';
 
 // Top of every Studio page: the page title and a profile menu on top, then the Studio
 // sections. The profile menu shows who you are, the way back to Scala’s Shelf and
@@ -16,7 +16,6 @@ export function StudioHeader({ title, user }: { title: string; user: StaffUser |
       <nav className="studio-nav" aria-label="Studio">
         <NavLink to="/studio" end>My desk</NavLink>
         {canReview(user) && <NavLink to="/studio/review">Review</NavLink>}
-        {isAdmin(user) && <NavLink to="/studio/staff">Staff</NavLink>}
       </nav>
     </header>
   );
@@ -66,8 +65,9 @@ function ProfileMenu({ user }: { user: StaffUser | null }) {
         <div className="profile-menu" role="menu">
           <div className="profile-who">
             <strong>{user ? user.name || user.email : 'Guest'}</strong>
-            {user ? <span>{user.email} · {user.role}</span> : <span>Drafts stay on this device</span>}
+            {user ? <span>{user.email} · {ROLE_LABEL[user.role]}</span> : <span>Drafts stay on this device</span>}
           </div>
+          {isAdmin(user) && <Link to="/studio/admin" role="menuitem" className="profile-item">Admin</Link>}
           <Link to="/" role="menuitem" className="profile-item">Back to Scala’s Shelf</Link>
           {user ? (
             <button

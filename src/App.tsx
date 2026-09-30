@@ -16,7 +16,7 @@ const StudioDashboard = lazy(() => studio().then((m) => ({ default: m.StudioDash
 const StudioEditor = lazy(() => studio().then((m) => ({ default: m.StudioEditor })));
 const ReviewQueue = lazy(() => studio().then((m) => ({ default: m.ReviewQueue })));
 const ReviewBook = lazy(() => studio().then((m) => ({ default: m.ReviewBook })));
-const StaffAdmin = lazy(() => studio().then((m) => ({ default: m.StaffAdmin })));
+const AdminPage = lazy(() => studio().then((m) => ({ default: m.AdminPage })));
 const SignIn = lazy(() => (import.meta.env.VITE_READER_ONLY === '1' ? Promise.reject(new Error('Reader-only build')) : import('./pages/SignIn'))
   .then((m) => ({ default: m.SignIn })));
 
@@ -38,7 +38,9 @@ export default function App() {
                 <Route path="/studio" element={<StudioDashboard />} />
                 <Route path="/studio/review" element={<ReviewQueue />} />
                 <Route path="/studio/review/:id" element={<ReviewBook />} />
-                <Route path="/studio/staff" element={<StaffAdmin />} />
+                <Route path="/studio/admin" element={<AdminPage />} />
+                <Route path="/studio/admin/books/:id" element={<AdminPage />} />
+                <Route path="/studio/staff" element={<Navigate to="/studio/admin?tab=users" replace />} />
                 <Route path="/studio/:type/:id" element={<StudioEditor />} />
               </>
             )}
