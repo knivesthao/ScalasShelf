@@ -56,6 +56,8 @@ export default {
         : noMailer,
       workerSecret: env.WORKER_SECRET,
       text: env.AI ? workersAiText(env.AI) : undefined,
+      // Background jobs (Scala Finish) keep running after the response is sent.
+      background: (task) => (ctx as { waitUntil(p: Promise<unknown>): void }).waitUntil(task),
     });
     return app.fetch(request, env, ctx as never);
   },

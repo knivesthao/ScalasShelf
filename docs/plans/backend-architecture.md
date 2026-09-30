@@ -95,3 +95,15 @@ Sign-in goes behind the `Auth` interface in `api/src/platform.ts` (`userId(reque
 - **Switched off** (`src/lib/features.ts`): `rendering` (scene art, panel layout, audio) and `cloudStudio` (server storage + publishing). The Studio saves drafts on the writer's device (`src/lib/studioStore.ts` → `deviceStore`); the API's Studio routes stay built and tested but unused, and refuse everything in production because there's no sign-in.
 - R2 not enabled yet (needs the dashboard; only voice recordings use it, and they're on hold).
 - `gpu/package_content.py` still writes to Supabase; it gets reworked when the real GPU worker is built (it should claim `package` jobs from `/api/worker/jobs/claim`).
+
+## API layer (2026-09-30)
+
+The phone edits and displays; the Worker does the rest.
+
+- **Versioned:** every route is at `/api/v1/…` (the app and mobile builds use it). The bare `/api/…` paths are the same routes, kept for what was deployed before versioning, the GPU worker and stored `/api/files/` links.
+- **Reading events:** `POST /api/v1/events` takes batches of up to 50 anonymous events (random device id; no account, name, IP or user agent). The app queues them on the phone and sends them when online (`src/lib/events.ts`). Admins get per-book totals at `GET /api/v1/admin/stats`. Table: `events` (migration 0006).
+- **AI usage:** every Scala call is recorded in `ai_usage` (task, model, book, tokens, time, success) through `metered()` in `services/ai.ts`. Admins: `GET /api/v1/admin/ai-usage`. Tokens only; cost is worked out from current prices at report time.
+- **Server-built books:** sending for review builds the package on the server from the saved scenes and enforces the same checklist the Studio shows (`src/lib/checklist.ts`).
+- **Background jobs:** Scala Finish runs as a job (`kind = 'finish'`, migration 0008) after the response is sent (`ctx.waitUntil`); the Studio polls `GET /api/v1/studio/jobs/:id`. The GPU worker only claims `scene`, `layer` and `package` jobs. A finish job still running after 3 minutes is reported as failed. If jobs outgrow `waitUntil`, move them to Cloudflare Queues behind `runInBackground()`.
+
+Deploying needs migrations 0004–0008 applied first: from `api/`, `npx wrangler d1 migrations apply textweaver --remote`.

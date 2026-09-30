@@ -2,7 +2,7 @@
 
 import { createApp } from './app';
 import { memoryStore, migrate, sqliteDb } from './local';
-import { devAuth, sessionAuth, type Mail } from './platform';
+import { devAuth, sessionAuth, type Mail, type TextModel } from './platform';
 import { sessionEmail } from './services/staff';
 import { seedDemo } from './seed';
 
@@ -10,7 +10,7 @@ import { seedDemo } from './seed';
  * `auth: 'dev'` (default): the x-dev-user header picks the caller (default demo-creator).
  * `auth: 'session'`: real cookie sessions, as in production.
  */
-export async function testApi({ seed = true, auth = 'dev' as 'dev' | 'session' } = {}) {
+export async function testApi({ seed = true, auth = 'dev' as 'dev' | 'session', text = undefined as TextModel | undefined } = {}) {
   const { db, raw } = sqliteDb(':memory:');
   migrate(raw);
   if (seed) await seedDemo(db);
@@ -20,13 +20,18 @@ export async function testApi({ seed = true, auth = 'dev' as 'dev' | 'session' }
     ('demo-reviewer', 'Demo Reviewer', 'reviewer', '2026-01-01'),
     ('writer@example.org', 'Writer', 'creator', '2026-01-01')`).run();
   const sent: Mail[] = [];
+  /** Background jobs started by requests; `settle()` waits for them. */
+  const pending: Promise<unknown>[] = [];
   const app = createApp({
     db,
     files: memoryStore(),
     auth: auth === 'dev' ? devAuth : sessionAuth((sessionId) => sessionEmail(db, sessionId)),
     mailer: { development: false, send: async (mail) => { sent.push(mail); } },
     workerSecret: 'test-secret',
+    text,
+    background: (task) => { pending.push(task); },
   });
+  const settle = () => Promise.all(pending.splice(0));
 
   /** Call the API as a user (default: the demo creator). */
   async function call(method: string, path: string, opts: { body?: unknown; user?: string; headers?: Record<string, string>; raw?: BodyInit } = {}) {
@@ -44,5 +49,5 @@ export async function testApi({ seed = true, auth = 'dev' as 'dev' | 'session' }
     return { status: res.status, json: json as any }; // eslint-disable-line @typescript-eslint/no-explicit-any
   }
 
-  return { app, db, raw, call, sent };
+  return { app, db, raw, call, sent, settle };
 }

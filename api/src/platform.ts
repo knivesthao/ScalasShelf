@@ -73,6 +73,8 @@ export interface Platform {
   workerSecret?: string;
   /** AI text model for Studio suggestions. Without one, suggestions fall back to simple rules. */
   text?: TextModel;
+  /** Keeps work running after the response is sent (Workers: ctx.waitUntil). Default: just let it run. */
+  background?: (task: Promise<unknown>) => void;
 }
 
 export const SESSION_COOKIE = 'tw_session';

@@ -39,4 +39,16 @@ describe('Scala Finish', () => {
     const river = added.bubbles[0].tokens.en?.find((t) => t.v);
     expect(river).toMatchObject({ v: 'river', gloss: 'a long stream of water' });
   });
+
+  it('runs as a background job the Studio can check on', async () => {
+    const { call, settle } = await testApi({ text: fake });
+    const start = await call('POST', '/studio/projects/demo-noy/finish');
+    expect(start.status).toBe(202);
+    expect((await call('GET', `/studio/jobs/${start.json.job_id}`)).json.status).toBe('running');
+    await settle();
+    expect((await call('GET', `/studio/jobs/${start.json.job_id}`)).json).toMatchObject({ status: 'complete', result: { first_new_scene: 3 } });
+    expect((await call('GET', '/studio/projects/demo-noy')).json.scenes).toHaveLength(5);
+    // The GPU worker never picks up the API's own jobs.
+    expect((await call('POST', '/worker/jobs/claim', { headers: { authorization: 'Bearer test-secret' } })).json.job).toBeNull();
+  });
 });

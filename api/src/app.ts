@@ -7,7 +7,7 @@ import {
 import { finishProject } from './services/finish';
 import { getBook, listBooks } from './services/books';
 import { bookStats, recordEvents, type EventBatch } from './services/events';
-import { claimNextJob, finishJob, getJob, queueJob } from './services/jobs';
+import { claimNextJob, finishJob, getJob, queueJob, runInBackground } from './services/jobs';
 import {
   endSession, getStaff, listStaff, redeemSignInLink, removeStaff, requestSignInLink, requireRole,
   upsertStaff, SESSION_TTL_MS,
@@ -51,6 +51,7 @@ function sessionCookie(value: string, maxAgeSeconds: number, secure: boolean): s
 
 export function createApp(platform: Platform) {
   const { db, files, auth, mailer } = platform;
+  const background = platform.background ?? ((task: Promise<unknown>) => { void task; });
   const secure = platform.secureCookies ?? true;
 
   /** Any staff member (creators, reviewers, admins) may use the Studio. */
@@ -124,10 +125,18 @@ export function createApp(platform: Platform) {
     return c.json(await suggestDescription(model, input));
   });
   // Scala Finish: the server reads the saved book, writes the rest and saves it (services/finish.ts).
+  // It can take half a minute, so it runs as a background job; the Studio polls /studio/jobs/:id.
   app.post('/studio/projects/:id/finish', async (c) => {
     const userId = await requireStaff(c);
     const projectId = c.req.param('id');
-    return c.json(await finishProject(db, metered(platform.text, db, { task: 'finish', userId, projectId }), userId, projectId));
+    await assertOwnsProject(db, userId, projectId);
+    const model = metered(platform.text, db, { task: 'finish', userId, projectId });
+    if (!model) throw new BadRequest('AI isn’t set up here. It works on the live site.');
+    const jobId = await runInBackground(db, background, { userId, projectId, kind: 'finish' }, async () => {
+      const book = await finishProject(db, model, userId, projectId);
+      return { first_new_scene: book.first_new_scene };
+    });
+    return c.json({ job_id: jobId, status: 'running' }, 202);
   });
   app.post('/studio/suggest/idea', async (c) => {
     const userId = await requireStaff(c);
@@ -250,6 +259,10 @@ export function createApp(platform: Platform) {
   app.post('/render', async (c) => {
     const { kind, payload } = await body<{ kind: unknown; payload: Record<string, unknown> }>(c);
     return c.json({ job_id: await queueJob(db, requireUser(c), kind, payload ?? {}), status: 'queued' }, 201);
+  });
+  app.get('/studio/jobs/:id', async (c) => {
+    const job = await getJob(db, requireUser(c), c.req.param('id'));
+    return c.json({ status: job.status, result: job.result, error_message: job.error });
   });
   app.get('/render/:id', async (c) => {
     const job = await getJob(db, requireUser(c), c.req.param('id'));
