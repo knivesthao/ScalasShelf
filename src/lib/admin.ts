@@ -69,4 +69,6 @@ export const money = (usd: number | null) =>
 export const count = (n: number | null | undefined) => (n ?? 0).toLocaleString('en-US');
 export const seconds = (s: number | null) => (s === null ? '—' : s < 60 ? `${s.toFixed(1)} s` : `${(s / 60).toFixed(1)} min`);
 export const hours = (h: number | null) => (h === null ? '—' : h < 48 ? `${h.toFixed(1)} hours` : `${(h / 24).toFixed(1)} days`);
-export const TASK_LABEL: Record<string, string> = { describe: 'Description', idea: 'New book idea', finish: 'Scala Finish' };
+export const TASK_LABEL: Record<string, string> = {
+  describe: 'Description', idea: 'New book idea', finish: 'Scala Finish', meanings: 'Word meanings', translate: 'Translation (characters)',
+};

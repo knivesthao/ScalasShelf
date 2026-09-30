@@ -17,6 +17,8 @@ export const PRICES_PER_MILLION: Record<string, { input: number; output: number 
   // https://docs.anthropic.com pricing (models overview), checked 2026-09-30.
   'anthropic/claude-haiku-4-5': { input: 1, output: 5 },
   'anthropic/claude-sonnet-5-5': { input: 2, output: 10 },
+  // Priced per character: input_tokens holds characters for translation rows.
+  'google/nmt': { input: 20, output: 0 },
 };
 
 interface ModelTokens { model: string; input_tokens: number; output_tokens: number }

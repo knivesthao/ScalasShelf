@@ -5,6 +5,10 @@ import {
   aiUsage, metered, suggestDescription, suggestFromIdea, type DescribeInput, type IdeaInput,
 } from './services/ai';
 import { finishProject } from './services/finish';
+import { fillMeanings } from './services/meanings';
+import {
+  LANGUAGES, bookTexts, flushTranslations, queueTranslations, translationStatus, translationUsage, type Language,
+} from './services/translation';
 import type { AiTask } from './services/ai-routes';
 import { adminBook, adminBooks, adminOverview } from './services/admin';
 import { getBook, listBooks } from './services/books';
@@ -144,6 +148,39 @@ export function createApp(platform: Platform) {
     });
     return c.json({ job_id: jobId, status: 'running' }, 202);
   });
+  // New words' meanings: shared dictionary first, then one AI request for the rest (services/meanings.ts).
+  app.post('/studio/projects/:id/meanings', async (c) => {
+    const userId = await requireStaff(c);
+    const projectId = c.req.param('id');
+    return c.json(await fillMeanings(db, modelsFor('meanings', { userId, projectId }), userId, projectId));
+  });
+
+  // Translation (services/translation.ts): queue the book's text, translate the queue in
+  // batches in the background, and read back what's done. Cached texts cost nothing.
+  const language = (value: unknown, fallback: Language): Language =>
+    (LANGUAGES as readonly string[]).includes(String(value)) ? (value as Language) : fallback;
+  const bookText = async (userId: string, projectId: string) => {
+    const { project, scenes } = await getProject(db, userId, projectId);
+    return bookTexts(project.description, scenes.map((s) => s.data));
+  };
+  app.post('/studio/projects/:id/translations', async (c) => {
+    const userId = await requireStaff(c);
+    const input = await body<{ source?: string; target?: string }>(c).catch(() => ({} as { source?: string; target?: string }));
+    const source = language(input.source, 'en');
+    const target = language(input.target, 'lo');
+    if (source === target) throw new BadRequest('Choose two different languages');
+    const texts = await bookText(userId, c.req.param('id'));
+    const queued = await queueTranslations(db, texts, source, target);
+    if (queued && platform.translator) background(flushTranslations(db, platform.translator, translationUsage(db, platform.translator)));
+    return c.json({ queued, ...(await translationStatus(db, texts, source, target)) }, 202);
+  });
+  app.get('/studio/projects/:id/translations', async (c) => {
+    const userId = await requireStaff(c);
+    const source = language(c.req.query('source'), 'en');
+    const target = language(c.req.query('target'), 'lo');
+    return c.json(await translationStatus(db, await bookText(userId, c.req.param('id')), source, target));
+  });
+
   app.post('/studio/suggest/idea', async (c) => {
     const userId = await requireStaff(c);
     return c.json(await suggestFromIdea(firstModel('idea', { userId }), await body<IdeaInput>(c)));

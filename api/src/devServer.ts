@@ -8,6 +8,7 @@ import { createApp } from './app';
 import { folderStore, migrate, sqliteDb } from './local';
 import { consoleMailer, sessionAuth } from './platform';
 import { languageTool } from './services/spelling';
+import { googleTranslate } from './services/translation';
 import { sessionEmail } from './services/staff';
 import { seedDemo } from './seed';
 
@@ -26,6 +27,8 @@ const app = createApp({
   mailer: consoleMailer,
   // The real spell checker locally too (it's a free public API).
   spelling: languageTool(),
+  // Real translation locally only with a key: GOOGLE_TRANSLATE_KEY=… npm run dev
+  translator: process.env.GOOGLE_TRANSLATE_KEY ? googleTranslate(process.env.GOOGLE_TRANSLATE_KEY) : undefined,
   secureCookies: false,
   workerSecret: process.env.WORKER_SECRET ?? 'dev-worker-secret',
 });

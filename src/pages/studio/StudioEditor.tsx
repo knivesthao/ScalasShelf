@@ -330,6 +330,7 @@ export function StudioEditor() {
             scenes={scenes}
             onSubmit={studio.submit}
             onSave={studio.flush}
+            onReload={studio.reload}
             onUnpublish={studio.unpublish}
             onJumpToScene={(i) => { setSceneIndex(i); setTab('script'); }}
           />

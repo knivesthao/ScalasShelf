@@ -4,7 +4,7 @@
 
 import type { TextModel } from '../platform';
 
-export type AiTask = 'idea' | 'describe' | 'finish';
+export type AiTask = 'idea' | 'describe' | 'finish' | 'meanings';
 export type Provider = 'workers-ai' | 'anthropic';
 
 export interface ModelChoice {
@@ -19,6 +19,8 @@ export const TASK_ROUTES: Record<AiTask, ModelChoice[]> = {
   idea: [{ provider: 'workers-ai', model: '@cf/meta/llama-3.1-8b-instruct', attempts: 1 }],
   // Details tab: one plain sentence. The quantized model: about a sixth of the input price.
   describe: [{ provider: 'workers-ai', model: '@cf/meta/llama-3.1-8b-instruct-fp8-fast', attempts: 1 }],
+  // Word meanings for a whole book in one request (only words not in the shared dictionary), as JSON.
+  meanings: [{ provider: 'workers-ai', model: '@cf/meta/llama-3.1-8b-instruct', attempts: 2 }],
   // Scala Finish: a whole story children will read. Claude Haiku, then Sonnet if Haiku's
   // answer fails validation twice. Until Claude is set up, the Workers AI model does it.
   finish: [

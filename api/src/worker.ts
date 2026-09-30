@@ -9,6 +9,7 @@ import { createApp } from './app';
 import { workersAiText, type WorkersAi } from './services/ai';
 import { aiRouter } from './services/ai-routes';
 import { languageTool } from './services/spelling';
+import { flushTranslations, googleTranslate, translationUsage } from './services/translation';
 import { noMailer, resendMailer, sessionAuth, type Db, type FileStore } from './platform';
 import { sessionEmail } from './services/staff';
 
@@ -26,6 +27,8 @@ interface Bindings {
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   AI?: WorkersAi;
+  /** Google Cloud Translation API key (secret), restricted to the Translation API. */
+  GOOGLE_TRANSLATE_KEY?: string;
 }
 
 /** Until R2 is enabled: uploads fail with a clear message, everything else works. */
@@ -47,6 +50,12 @@ function r2Store(bucket: R2Like): FileStore {
 }
 
 export default {
+  /** Every 5 minutes (wrangler.toml → triggers): translate whatever is still in the queue. */
+  scheduled(_event: unknown, env: Bindings, ctx: { waitUntil(p: Promise<unknown>): void }) {
+    const translator = env.GOOGLE_TRANSLATE_KEY ? googleTranslate(env.GOOGLE_TRANSLATE_KEY) : undefined;
+    ctx.waitUntil(flushTranslations(env.DB, translator, translationUsage(env.DB, translator)));
+  },
+
   fetch(request: Request, env: Bindings, ctx: unknown) {
     // Built per request because bindings arrive with the request; creating a Hono app is cheap.
     const app = createApp({
@@ -60,6 +69,7 @@ export default {
       // Each AI job's model: services/ai-routes.ts. Claude joins once its provider is set up.
       ai: aiRouter({ ...(env.AI ? { 'workers-ai': (model: string) => workersAiText(env.AI!, model) } : {}) }),
       spelling: languageTool(),
+      translator: env.GOOGLE_TRANSLATE_KEY ? googleTranslate(env.GOOGLE_TRANSLATE_KEY) : undefined,
       // Background jobs (Scala Finish) keep running after the response is sent.
       background: (task) => (ctx as { waitUntil(p: Promise<unknown>): void }).waitUntil(task),
     });

@@ -5,13 +5,16 @@ import { memoryStore, migrate, sqliteDb } from './local';
 import { devAuth, sessionAuth, type Mail, type TextModel } from './platform';
 import { sessionEmail } from './services/staff';
 import { singleModel } from './services/ai-routes';
+import type { Translator } from './services/translation';
 import { seedDemo } from './seed';
 
 /**
  * `auth: 'dev'` (default): the x-dev-user header picks the caller (default demo-creator).
  * `auth: 'session'`: real cookie sessions, as in production.
  */
-export async function testApi({ seed = true, auth = 'dev' as 'dev' | 'session', text = undefined as TextModel | undefined } = {}) {
+export async function testApi({
+  seed = true, auth = 'dev' as 'dev' | 'session', text = undefined as TextModel | undefined, translator = undefined as Translator | undefined,
+} = {}) {
   const { db, raw } = sqliteDb(':memory:');
   migrate(raw);
   if (seed) await seedDemo(db);
@@ -30,6 +33,7 @@ export async function testApi({ seed = true, auth = 'dev' as 'dev' | 'session', 
     mailer: { development: false, send: async (mail) => { sent.push(mail); } },
     workerSecret: 'test-secret',
     ai: text ? singleModel(text) : undefined,
+    translator,
     background: (task) => { pending.push(task); },
   });
   const settle = () => Promise.all(pending.splice(0));

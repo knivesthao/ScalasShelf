@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LEVELS, buildVocab, type Level } from '@/lib/format';
+import { api } from '@/lib/api';
 import { cloudActive } from '@/lib/studioStore';
 import { suggestDescription, suggestLevel, storyLines } from '@/lib/suggest';
 import type { StudioProject, StudioScene } from './useStudioProject';
@@ -108,6 +109,8 @@ export function DetailsTab({ project, scenes, onUpdate, onScalaFinish }: Details
         )}
       </section>
 
+      {canUseAi && <TranslationSection projectId={project.id} />}
+
       {canUseAi && (
         <section className="studio-section scala-finish">
           <h2>Scala Finish</h2>
@@ -118,5 +121,88 @@ export function DetailsTab({ project, scenes, onUpdate, onScalaFinish }: Details
         </section>
       )}
     </div>
+  );
+}
+
+interface TranslationStatus {
+  texts: { text: string; translation: string | null }[];
+  done: number;
+  waiting: number;
+  failed: number;
+  queued?: number;
+}
+
+/**
+ * Lao translation of the book's text. The server queues what isn't translated yet and
+ * sends it in batches (api/src/services/translation.ts); sentences translated before, in
+ * any book, come straight from the cache. Every translation is a draft a Lao speaker checks.
+ */
+function TranslationSection({ projectId }: { projectId: string }) {
+  const [status, setStatus] = useState<TranslationStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    api.get<TranslationStatus>(`/studio/projects/${projectId}/translations?target=lo`).then(setStatus).catch(() => {});
+  }, [projectId]);
+
+  // While texts are waiting, check back every few seconds (for up to two minutes).
+  useEffect(() => {
+    if (!status?.waiting) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries++;
+      api.get<TranslationStatus>(`/studio/projects/${projectId}/translations?target=lo`)
+        .then((s) => { setStatus(s); if (!s.waiting || tries > 40) clearInterval(timer); })
+        .catch(() => {});
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [projectId, status?.waiting]);
+
+  async function translate() {
+    setBusy(true);
+    setError(null);
+    try {
+      setStatus(await api.post<TranslationStatus>(`/studio/projects/${projectId}/translations`, { source: 'en', target: 'lo' }));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const total = status?.texts.length ?? 0;
+  return (
+    <section className="studio-section">
+      <h2>Lao translation</h2>
+      <p className="hint">
+        Translates the description, text on screen, lines and word meanings into Lao. Sentences already translated in any book are reused for free.
+        A Lao speaker should check every translation.
+      </p>
+      {status && total > 0 && (
+        <p className={status.done === total ? 'check-ok' : 'hint'}>
+          {status.done === total ? `✓ All ${total} texts are translated.` : `${status.done} of ${total} texts translated`}
+          {status.waiting > 0 && ` · ${status.waiting} in the queue`}
+          {status.failed > 0 && ` · ${status.failed} failed`}
+        </p>
+      )}
+      {error && <p className="studio-error" role="alert">{error}</p>}
+      <div className="suggest-row">
+        <button className="ghost-btn" onClick={translate} disabled={busy || (status !== null && total > 0 && status.done === total)}>
+          {busy ? 'Adding to the queue…' : 'Translate to Lao'}
+        </button>
+        {status && status.done > 0 && (
+          <button className="link-btn" onClick={() => setOpen((o) => !o)}>{open ? 'Hide translations' : 'Show translations'}</button>
+        )}
+      </div>
+      {open && status && (
+        <ul className="translation-list">
+          {status.texts.filter((t) => t.translation).map((t) => (
+            <li key={t.text}><span>{t.text}</span><span lang="lo">{t.translation}</span></li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

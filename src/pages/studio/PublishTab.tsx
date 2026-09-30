@@ -17,6 +17,8 @@ interface PublishTabProps {
   onJumpToScene: (index: number) => void;
   /** Saves pending edits, so the server checks what's on screen. */
   onSave: () => Promise<void>;
+  /** Reloads the book from the server (after Scala filled in word meanings there). */
+  onReload: () => Promise<void>;
 }
 
 /** How long each check takes to "tick" in the animation. */
@@ -27,7 +29,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const snapshot = (project: StudioProject, scenes: StudioScene[]) =>
   JSON.stringify([project.title, project.description, project.level, project.purpose, project.quiz, project.cast, scenes.map((s) => s.draft)]);
 
-export function PublishTab({ project, scenes, onSubmit, onUnpublish, onJumpToScene, onSave }: PublishTabProps) {
+export function PublishTab({ project, scenes, onSubmit, onUnpublish, onJumpToScene, onSave, onReload }: PublishTabProps) {
   const [checks, setChecks] = useState<Check[] | null>(null);
   /** How many checks have finished animating. */
   const [shown, setShown] = useState(0);
@@ -35,6 +37,28 @@ export function PublishTab({ project, scenes, onSubmit, onUnpublish, onJumpToSce
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [filling, setFilling] = useState(false);
+  const [filledNote, setFilledNote] = useState<string | null>(null);
+
+  /** Scala fills in missing word meanings (shared dictionary first, then one AI request). */
+  async function fillMeanings() {
+    setFilling(true);
+    setError(null);
+    try {
+      await onSave();
+      const r = await api.post<{ filled: number; missing: string[] }>(`/studio/projects/${project.id}/meanings`);
+      await onReload();
+      setChecks(null);
+      setCheckedAt(null);
+      setFilledNote(r.missing.length
+        ? `Scala added ${r.filled} meaning${r.filled === 1 ? '' : 's'}. Still missing: ${r.missing.join(', ')}.`
+        : `Scala added ${r.filled} meaning${r.filled === 1 ? '' : 's'}. Check them, then review again.`);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setFilling(false);
+    }
+  }
   const cancelled = useRef(false);
   useEffect(() => () => { cancelled.current = true; }, []);
 
@@ -135,6 +159,11 @@ export function PublishTab({ project, scenes, onSubmit, onUnpublish, onJumpToSce
                       </ul>
                     )}
                     {state === 'skipped' && c.note && <span className="hint">{c.note}</span>}
+                    {state === 'fail' && c.id === 'words' && cloud && c.problems.some((p) => p.message.includes('needs a meaning')) && (
+                      <button className="ghost-btn" onClick={fillMeanings} disabled={filling}>
+                        {filling ? 'Scala is writing…' : '✨ Ask Scala for the meanings'}
+                      </button>
+                    )}
                   </div>
                 </li>
               );
@@ -145,6 +174,7 @@ export function PublishTab({ project, scenes, onSubmit, onUnpublish, onJumpToSce
         {done && !stale && failed > 0 && <p className="hint">Fix the {failed === 1 ? 'red item' : `${failed} red items`}, then review again.</p>}
         {stale && <p className="hint">You changed the book since the review. Review it again.</p>}
         {error && <p className="studio-error" role="alert">{error}</p>}
+        {filledNote && <p className="check-ok" role="status">{filledNote}</p>}
 
         <div className="publish-actions">
           {clear && cloud ? (

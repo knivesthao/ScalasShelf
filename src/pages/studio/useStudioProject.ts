@@ -164,6 +164,14 @@ export function useStudioProject(id: string | undefined) {
     setAllScenes(list.map(toScene));
   }, []);
 
+  /** Loads the book again from the server, after the server changed it (e.g. word meanings). */
+  const reload = useCallback(async () => {
+    if (!projectRef.current) return;
+    await flush();
+    const { project: p, scenes: s } = await studioStore.get(projectRef.current.id);
+    replaceBook(p as StudioProject, s);
+  }, [flush, replaceBook]);
+
   const unpublish = useCallback(async () => {
     if (!projectRef.current) return;
     setCurrentProject(await studioStore.unpublish(projectRef.current.id));
@@ -171,6 +179,6 @@ export function useStudioProject(id: string | undefined) {
 
   return {
     project, scenes, loading, loadError, saveState,
-    updateProject, updateScene, addScene, deleteScene, submit, unpublish, flush, replaceBook,
+    updateProject, updateScene, addScene, deleteScene, submit, unpublish, flush, replaceBook, reload,
   };
 }

@@ -24,7 +24,7 @@ These are the only endpoints that call an AI model. Everything else in the API i
 | **`POST /api/v1/studio/suggest/idea`** | "+ New" popup: tidies the writer’s idea into the book’s description, and picks a level for learning books | **Workers AI `@cf/meta/llama-3.1-8b-instruct`** (JSON mode) | Built. Uses this model today |
 | **`POST /api/v1/studio/suggest/description`** | Details tab: "Ask Scala to write it" — a one-sentence blurb from the story | **Workers AI `@cf/meta/llama-3.1-8b-instruct-fp8-fast`** | Built. Today it uses `llama-3.1-8b-instruct`; switch to fp8-fast |
 | **`POST /api/v1/studio/projects/:id/finish`** | Scala Finish: writes the rest of the story (scenes, lines, new words) as a background job | **Claude Haiku 4.5 (`claude-haiku-4-5`)**; retry on **Claude Sonnet 5.5 (`claude-sonnet-5-5`)** if Haiku’s answer fails validation twice | Built. Today it uses `llama-3.1-8b-instruct`; switch to Haiku |
-| **`POST /api/v1/studio/suggest/meanings`** *(planned)* | Simple meanings for a book’s new words, in one request per book; only words not already in the shared dictionary | **Workers AI `@cf/meta/llama-3.1-8b-instruct`** (JSON mode) | Planned |
+| **`POST /api/v1/studio/projects/:id/meanings`** | Simple meanings for a book’s new words: the shared dictionary first, then **one request for the whole book** as a numbered list | **Workers AI `@cf/meta/llama-3.1-8b-instruct`** (JSON mode) | Built (Review → “Ask Scala for the meanings”) |
 | **`POST /api/v1/studio/suggest/simplify`** *(planned)* | Rewrites a line the level check flagged, in simpler words; the word lists check the result | **Workers AI `@cf/meta/llama-3.1-8b-instruct-fp8-fast`** | Planned |
 | **`POST /api/v1/render`** (jobs `scene`, `layer`) *(planned for real art)* | Draws characters and places, and re-rolls one picture | Drafts: **Workers AI `@cf/black-forest-labs/flux-1-schnell`**. Final art: **Workers AI `@cf/black-forest-labs/flux-2-dev`** | Built with demo art only; illustrations are switched off |
 | **Safety check** inside `POST /api/v1/studio/projects/:id/submit` *(planned)* | Screens the book’s text before it reaches a moderator | **Workers AI `@cf/meta/llama-guard-3-8b`** | Planned |
@@ -34,7 +34,7 @@ These are the only endpoints that call an AI model. Everything else in the API i
 | API call | Job | Service | Why not AI |
 |---|---|---|---|
 | `POST /api/v1/studio/projects/:id/check` and `/submit` | Spelling | **LanguageTool public API** (built) | Built for exactly this, free, no key |
-| `POST /api/v1/studio/suggest/translate` *(planned)* | Lao ↔ English translation | **Google Cloud Translation (NMT)** | A translation service, with Lao support and a free monthly allowance; cheaper and more predictable than an LLM |
+| `POST /api/v1/studio/projects/:id/translations` (queue) and `GET …/translations` (status) | Lao ↔ English translation | **Google Cloud Translation (NMT)** | A translation service, with Lao support and a free monthly allowance; cheaper and more predictable than an LLM. Built; needs `GOOGLE_TRANSLATE_KEY` |
 
 ### Jobs that use no AI at all
 
@@ -115,17 +115,29 @@ These are estimates from list prices. The admin view shows the measured cost onc
 | **Together AI** | Only if FLUX.2 dev’s characters aren’t consistent enough | Optional | Startup credits applied for. Would add `TOGETHER_API_KEY` |
 | **Microsoft Translator** | Only as an alternative to Google Translation | Optional | Free tier 2 million characters a month |
 
+## How translation and word meanings save money
+
+- **Translation queue** (`api/src/services/translation.ts`): a book’s text is queued, and the queue is
+  sent in batches: up to 128 texts and about 5,000 characters per request (Google’s limits). Google
+  takes a list and returns the translations in the same order, so there are no dividers to get
+  mistranslated. Google charges per character, so batching cuts requests, not price; **the cache**
+  cuts price: every translated text is stored once and reused by every book. The queue is sent in
+  the background right away, and a 5-minute Cron Trigger picks up anything left.
+- **Word meanings** (`api/src/services/meanings.ts`): meanings writers type go into a shared
+  dictionary (`word_meanings`, by word and level). Missing meanings are looked up there first; only
+  the rest go to Scala, all in one request with the instructions sent once. Scala’s answers are
+  saved, so a word is paid for once per level.
+- Both show in the admin view (translation as characters, task “Translation”).
+
 ## What the code needs next
 
-Today one Workers AI model (`WORKERS_AI_TEXT_MODEL` in `api/src/services/ai.ts`) does all three built
-jobs. To follow this plan:
+Routing is built (`api/src/services/ai-routes.ts`). Still to do:
 
-1. A small routing table in `services/ai.ts`: each task (`idea`, `describe`, `finish`, …) names its
-   provider and model, with a fallback for `finish`.
+1. ~~A routing table~~ done.
 2. A Claude provider (the official `@anthropic-ai/sdk`) beside the Workers AI one, behind the same
    `TextModel` interface, so `metered()` records its tokens too.
 3. Structured outputs for Scala Finish on Haiku, so the answer always matches our JSON shape.
-4. Add the new models to `PRICES_PER_MILLION` so the admin view estimates their cost.
+4. ~~Prices for the new models~~ done (`PRICES_PER_MILLION`).
 
 ## Known gaps
 
