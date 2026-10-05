@@ -1,60 +1,93 @@
-# Scala’s Shelf
+# Kiro University Challenge Project 🎓
 
-*Formerly Textweaver and Lao Media Maker.*
+This repository contains my final project submission for the **Kiro University Challenge (September 21 - October 5, 2026)**
 
-A free English-learning app for students in Laos: short animated comics, written for
-their level, that download once and read anywhere, even without internet. Includes a
-Studio where writers turn a few lines of English into an animated comic.
+Built a spec-driven development environment using Kiro's orchestration framework, featuring a strict-mode steering configuration, a custom Code Reviewer agent, a pre-commit lifecycle hook, property-based tests, MCP integration, and a packaged Kiro power. The project demonstrates how Kiro's `.kiro/` architecture enables structured, automated, and verifiable development workflows.
 
-Internal names still use `textweaver` so nothing live or saved on readers' devices breaks: the
-D1 database, the offline and Studio storage keys, and the `textweaver.motion-comic/2` format id.
+---
 
-## Quick Start
+## 📁 Repository Structure
 
-```bash
-git clone https://github.com/knivesthao/ScalasShelf.git
-cd ScalasShelf
-npm install
-npm run dev            # app + API on http://localhost:5173
+```text
+.kiro/
+├── steering/
+│   └── main.toml                    # Engine configuration & strict-mode parameters
+├── agents/
+│   └── reviewer.json                # Custom Code Reviewer agent
+├── hooks/
+│   └── pre-commit.sh                # Workflow validation hook script
+├── powers/
+│   └── reviewer-power/
+│       └── plugin.json              # Packaged Kiro power
+└── settings/
+    └── mcp.json                     # Model Context Protocol configuration
+tests/
+└── property_test.py                 # Property-based tests (Hypothesis)
 ```
 
-That's all: no accounts or keys needed. `npm run dev` also runs the API (Hono, in
-`api/`) on `/api`, backed by a local SQLite database in `.data/` that is created and
-seeded with demo content on first run: a published comic ("Morning Market") and a
-draft to finish in the Studio ("Noy and the Buffalo"). Delete `.data/` to reset.
+---
 
-- Library: `/` · My Library (saved on this device): `/my-library` · Studio: `/studio`
-- Scene art in development comes from the demo art pack in `public/demo-art/`
-  (regenerate with `scripts/generate-demo-art.py`).
-- Offline mode needs the production build: `npm run build && npm run preview`, open
-  the site once, download a book, then go offline.
+## 🛠️ Components
 
-## Architecture
+### 1. Spec-Driven Development
+The entire project is structured around Kiro's spec-driven development methodology, using the `.kiro/` directory to define agents, hooks, steering, and powers.
 
-Cloudflare, on free tiers: one Worker serves the app and the API (Hono), with D1 as the
-database and R2 for files. See `docs/plans/backend-architecture.md`.
+### 2. Steering Configuration (`.kiro/steering/main.toml`)
+Strict-mode engine configuration using the `kiro-large-latest` model with a low temperature for deterministic output.
+* Mode: `strict`
+* Temperature: `0.2`
 
-## Running Tests
+### 3. Custom Agent (`.kiro/agents/reviewer.json`)
+A custom **Code Reviewer** agent that parses files and provides concise feedback using the `file_reader` toolset.
+
+### 4. Hooks (`.kiro/hooks/pre-commit.sh`)
+A pre-commit lifecycle hook that validates workspace integrity before commits are finalized.
+
+### 5. Property-Based Testing (`tests/property_test.py`)
+Uses the [Hypothesis](https://hypothesis.readthedocs.io/) library to validate correctness properties:
+- Hook paths are non-empty strings
+- Steering temperature is always between 0.0 and 1.0
+- Agent tools list is never empty
+- Project version follows semver format
+
+### 6. Model Context Protocol (`.kiro/settings/mcp.json`)
+MCP server configuration integrating the AWS Documentation MCP server for enhanced context during development.
+
+### 7. Powers (`.kiro/powers/reviewer-power/plugin.json`)
+A packaged Kiro power that bundles the Code Reviewer agent for reuse and distribution.
+
+---
+
+## 🚀 Local Setup & Validation
 
 ```bash
-npm test               # unit, API and page tests (Vitest)
-npx playwright test    # browser walkthrough; needs `npm run dev` running
-npm run record         # demo video clips into ./recordings (reset .data/ first)
+# 1. Clone this repository
+git clone https://github.com/knivesthao/kiro-university-sprint
+
+# 2. Navigate to the project directory
+cd kiro-university-sprint
+
+# 3. Make the hook executable and run it
+chmod +x .kiro/hooks/pre-commit.sh
+./.kiro/hooks/pre-commit.sh
+
+# 4. Install test dependencies and run property-based tests
+python3 -m ensurepip --upgrade
+python3 -m pip install hypothesis pytest
+python3 -m pytest tests/property_test.py -v
 ```
 
-## Live site
+---
 
-**https://scalas-shelf.knives-thao.workers.dev** — one Cloudflare Worker (free plan)
-serving the app and the API, with the D1 database `textweaver` (APAC).
-
-```bash
-npm run deploy         # build + deploy (needs `npx wrangler login` once)
-npm run seed:remote    # (re)load the demo books into the Cloudflare database
-```
-
-What's switched off for now (`src/lib/features.ts`):
-- **Studio is writing-only and saved on the writer's device.** No scene art, panel
-  layout or audio, and no publishing. Nothing from the Studio reaches the database;
-  the API refuses all writes until sign-in exists.
-- Voice recordings also need R2: enable it in the Cloudflare dashboard, create the
-  bucket, and uncomment `[[r2_buckets]]` in `api/wrangler.toml`.
+## 🎯 Challenge Requirements Checklist
+- [x] GitHub account age > 3 months
+- [x] Initial commit timestamped after September 21, 2026
+- [x] Spec-driven development structure
+- [x] Steering document configured
+- [x] Pre-commit hook implemented
+- [x] Property-based tests written
+- [x] Model Context Protocol (MCP) configured
+- [x] Custom agent configured
+- [x] Kiro power packaged
+- [x] Public project demo recorded
+- [x] Social proof shared on LinkedIn/X

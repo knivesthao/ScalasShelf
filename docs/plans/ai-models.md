@@ -45,7 +45,7 @@ These are the only endpoints that call an AI model. Everything else in the API i
 | Image prompts | Filled in from a template: style guide + place description + character descriptions from the Cast tab |
 | Placing characters in a scene | `composeScene` lays out the cast’s pictures (`src/lib/cast.ts`) |
 | Review checks (pages, lines, art, new words, quiz) | `src/lib/checklist.ts` |
-| Voice audio | Recorded by people in the Studio. No speech service we checked supports Lao. |
+| Voice audio | Recorded by people in the Studio for now. No speech service we checked supports Lao. **Planned voice libraries: kokoro and kokoro-clone** (chosen 2026-10-01; not researched or installed yet). |
 
 ## Why each model
 
@@ -130,6 +130,13 @@ the next model in the list answers. Set a key with `npx wrangler secret put NAME
 locally as an environment variable for `npm run dev`.
 
 ## What to sign up for
+
+> **Open every account as ADMAIS LLC (US), not from Laos.** Laos has been on the FATF grey list
+> (jurisdictions under increased monitoring) since February 2025
+> ([FATF](https://www.fatf-gafi.org/en/publications/High-risk-and-other-monitored-jurisdictions/increased-monitoring-february-2025.html)).
+> Banks, cloud and AI platforms often reject, flag or manually review sign-ups and payments from
+> Laos, and Google Cloud and Microsoft Azure don't offer billing there. So sign up with ADMAIS LLC's
+> US address and billing. The work still happens in Laos, and some checks may ask about that.
 
 | Service | Needed for | Account | What to do |
 |---|---|---|---|

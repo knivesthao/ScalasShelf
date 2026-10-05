@@ -1,0 +1,13 @@
+{
+  "name": "reviewer-power",
+  "version": "1.0.0",
+  "description": "A Kiro power that packages the Code Reviewer agent with file reading capabilities.",
+  "resources": [
+    {
+      "type": "agent",
+      "path": "../../agents/reviewer.json"
+    }
+  ],
+  "skills": [],
+  "mcp": []
+}

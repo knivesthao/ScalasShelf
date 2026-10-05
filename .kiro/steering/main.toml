@@ -1,0 +1,8 @@
+[project]
+name = "university-sprint"
+version = "1.0.0"
+mode = "strict"
+
+[engine]
+model = "kiro-large-latest"
+temperature = 0.2

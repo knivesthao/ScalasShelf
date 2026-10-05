@@ -12,3 +12,6 @@ tsconfig.tsbuildinfo
 
 # Wrangler local state
 .wrangler/
+
+# Demo video script (internal only)
+video.md
